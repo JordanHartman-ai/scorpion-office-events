@@ -8,7 +8,9 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    const body = JSON.parse((e.postData && e.postData.contents) || "{}");
+    const raw=(e.postData && e.postData.contents) || "{}";
+    if (raw.length > 12000) throw new Error("Request too large");
+    const body = JSON.parse(raw);
     const action = body.action;
     if (!action) throw new Error("Missing action");
     const handlers = {
@@ -17,7 +19,8 @@ function doPost(e) {
       getPicks: () => getPicks_(body),
       getResults: () => ({ok:true,results:getResults_()}),
       setResults: () => setResults_(body),
-      setLock: () => setLock_(body)
+      setLock: () => setLock_(body),
+      setCommissionerNote: () => setCommissionerNote_(body)
     };
     if (!handlers[action]) throw new Error("Unknown action");
     return json_(handlers[action]());
@@ -47,6 +50,7 @@ function setupPool() {
   const keys = new Set(current.map(r=>r[0]));
   if (!keys.has("lockAt")) config.appendRow(["lockAt",""]);
   if (!keys.has("locked")) config.appendRow(["locked",""]);
+  if (!keys.has("commissionerNote")) config.appendRow(["commissionerNote",""]);
   return "Pool sheets ready";
 }
 
@@ -75,7 +79,15 @@ function getStatus_() {
   const c=configMap_();
   const timed = c.lockAt && !isNaN(Date.parse(c.lockAt)) && Date.now() >= Date.parse(c.lockAt);
   const manual = String(c.locked || "").trim().toLowerCase();
-  return {locked: manual==="true" ? true : !!timed, lockAt:c.lockAt || null, manualLock:manual==="true"};
+  const picks=ss_().getSheetByName("Picks");
+  const entryCount=picks ? Math.max(0,picks.getLastRow()-1) : 0;
+  return {
+    locked: manual==="true" ? true : !!timed,
+    lockAt:c.lockAt || null,
+    manualLock:manual==="true",
+    entryCount:entryCount,
+    commissionerNote:String(c.commissionerNote||"").slice(0,160)
+  };
 }
 
 function requireAdmin_(password) {
@@ -93,7 +105,8 @@ function safeEqual_(a,b) {
 
 function cleanName_(name) {
   const n=String(name||"").trim().replace(/\s+/g," ");
-  if (n.length < 1 || n.length > 40) throw new Error("Name must be 1–40 characters");\n  if (/^[=+@-]/.test(n)) throw new Error("Name contains unsupported characters");
+  if (n.length < 1 || n.length > 40) throw new Error("Name must be 1–40 characters");
+  if (/^[=+@-]/.test(n)) throw new Error("Name contains unsupported characters");
   return n;
 }
 
@@ -158,9 +171,11 @@ function submitPick_(body) {
   }
   const obj={name,pinHash,...picks,submittedAt,lastEditedAt:now};
   const row=headers.map(h=>obj[h]??"");
-  if (idx>=0) sh.getRange(idx+2,1,1,row.length).setValues([row]);
-  else sh.appendRow(row);
-  return {ok:true,updated};
+  const target=idx>=0 ? sh.getRange(idx+2,1,1,row.length) : sh.getRange(sh.getLastRow()+1,1,1,row.length);
+  target.setNumberFormat("@");
+  target.setValues([row]);
+  const entryCount=Math.max(0,sh.getLastRow()-1);
+  return {ok:true,updated,lastEditedAt:now,entryCount};
   } finally {
     scriptLock.releaseLock();
   }
@@ -220,4 +235,14 @@ function setLock_(body) {
   const value=body.locked===true ? "true" : "";
   if (idx<0) sh.appendRow(["locked",value]); else sh.getRange(idx+1,2).setValue(value);
   return {ok:true,status:getStatus_()};
+}
+function setCommissionerNote_(body) {
+  requireAdmin_(body.adminPassword);
+  const note=String(body.note||"").trim().slice(0,160);
+  const sh=ss_().getSheetByName("Config");
+  const data=sh.getDataRange().getValues();
+  const idx=data.findIndex((r,i)=>i>0 && r[0]==="commissionerNote");
+  if (idx<0) sh.appendRow(["commissionerNote",note]);
+  else sh.getRange(idx+1,2).setValue(note);
+  return {ok:true,note};
 }
