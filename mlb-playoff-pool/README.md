@@ -15,12 +15,12 @@ Railway is intentionally not needed for this size of pool.
 
 - 12-team MLB postseason bracket with round chaining.
 - Wild Card → Division Series → LCS → World Series.
-- 11 scored picks + World Series games tiebreaker.
+- 11 scored series-winner picks + 3 World Series tiebreakers: games, total runs, and total home runs.
 - Chalk and random autofill.
 - Participant edit PINs; the sheet stores only a SHA-256 hash using a secret pepper.
 - Server-side lock deadline plus commissioner lock/unlock override.
 - Other participants' picks hidden until lock.
-- Commissioner results entry.
+- Automatic MLB postseason result syncing, with commissioner manual fallback.
 - Post-lock leaderboard and pick-popularity cards.
 - MLB schedule/probable-pitcher panel.
 - No account/login requirement.
@@ -84,7 +84,16 @@ Before sharing the office link, confirm the six AL and six NL seeds against MLB'
 
 Each correct series winner is 1 point, 11 possible total.
 
-The World Series games prediction is stored as a tiebreaker. The UI currently shows total correct picks; if the commissioner enters `wsGames` in the Results row after the World Series, equal scores sort by closest tiebreaker.
+The three World Series predictions are tiebreakers only and do not add points.
+
+Ties are resolved in this order:
+1. Correct series winners (11 points max)
+2. Closest World Series game-count prediction
+3. Closest total World Series runs prediction
+4. Closest total World Series home runs prediction
+5. Earliest original submission time
+
+The dashboard refreshes official postseason results from MLB data after the pool locks, with a short cache to avoid excessive calls. Commissioner tools include a manual sync and manual-results fallback.
 
 ## Security notes
 
