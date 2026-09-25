@@ -82,7 +82,9 @@
   function renderResultsEditor() {
     $("#resultsEditor").innerHTML = FIELDS.map(f=>`
       <div class="result-row"><label for="res-${f}">${LABELS[f]}</label>
-      <select id="res-${f}"><option value="">Not decided</option>${Object.values(teamMap).map(t=>`<option value="${t.abbr}" ${state.results[f]===t.abbr?"selected":""}>${t.name}</option>`).join("")}</select></div>`).join("");
+      <select id="res-${f}"><option value="">Not decided</option>${Object.values(teamMap).map(t=>`<option value="${t.abbr}" ${state.results[f]===t.abbr?"selected":""}>${t.name}</option>`).join("")}</select></div>`).join("") + `
+      <div class="result-row"><label for="res-wsGames">World Series games</label>
+      <select id="res-wsGames"><option value="">Not final</option>${[4,5,6,7].map(n=>`<option value="${n}" ${Number(state.results.wsGames)===n?"selected":""}>${n} games</option>`).join("")}</select></div>`;
   }
 
   function updateStatusUI() {
@@ -117,7 +119,8 @@
     $("#dashboardLocked").classList.toggle("hidden",locked);
     $("#dashboardContent").classList.toggle("hidden",!locked);
     if(!locked)return;
-    const rows=state.allPicks.map(p=>({...p,score:scorePick(p)})).sort((a,b)=>b.score-a.score || Math.abs((Number(a.wsGames)||0)-(Number(state.results.wsGames)||0))-Math.abs((Number(b.wsGames)||0)-(Number(state.results.wsGames)||0)));
+    const tiebreak=Number(state.results.wsGames)||null;
+    const rows=state.allPicks.map(p=>({...p,score:scorePick(p)})).sort((a,b)=>b.score-a.score || (tiebreak ? Math.abs(Number(a.wsGames)-tiebreak)-Math.abs(Number(b.wsGames)-tiebreak) : 0));
     $("#leaderboard").innerHTML=rows.map((p,i)=>`<div class="leader-row"><span class="rank">${i+1}</span><span>${esc(p.name)}</span><span class="score">${p.score}/11</span></div>`).join("") || "<p class='subtle'>No entries yet.</p>";
     $("#popularity").innerHTML=FIELDS.map(f=>{
       const counts={}; rows.forEach(p=>{if(p[f])counts[p[f]]=(counts[p[f]]||0)+1});
