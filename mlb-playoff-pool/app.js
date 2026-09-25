@@ -57,7 +57,7 @@
     $("#bracket").innerHTML = rounds().map(r=>`
       <div class="round"><div class="round-title"><span>${r.title}</span></div><div class="round-games">
       ${r.games.map(([field,teams])=>`
-        <div class="matchup">
+        <div class="matchup ${state.picks[field] ? "matchup-picked" : ""}">
           <div class="matchup-label">${LABELS[field]}</div>
           ${teams.map(t => t ? `<button class="team-btn ${state.picks[field]===t.abbr?"selected":""}" data-field="${field}" data-team="${t.abbr}">
             <span class="seed">${t.seed}</span><span>${esc(t.name)}</span>
