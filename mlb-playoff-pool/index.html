@@ -31,7 +31,6 @@
     <nav class="tabs" aria-label="Pool views">
       <button class="tab active" data-view="picks">My bracket</button>
       <button class="tab" data-view="dashboard">Pool dashboard</button>
-      <button id="adminToggleBtn" class="tab admin-link" type="button">Commissioner tools</button>
     </nav>
 
     <section id="picksView" class="view active">
@@ -56,7 +55,7 @@
         <div class="panel-heading"><h3>How it works</h3><span>Office bragging rights</span></div>
         <div class="rules-grid">
           <div><strong>Scoring</strong><span>1 point per correct series winner, 11 points max.</span></div>
-          <div><strong>Tiebreaker</strong><span>Closest World Series game-count prediction wins tied scores.</span></div>
+          <div><strong>Tiebreaker</strong><span>After bracket score: closest WS games, then total runs, then total home runs. Tiebreakers do not add points.</span></div>
           <div><strong>Privacy</strong><span>Other brackets stay hidden until the pool locks.</span></div>
           <div><strong>Edits</strong><span>Use your name + edit PIN to reopen your bracket before lock.</span></div>
         </div>
@@ -64,11 +63,11 @@
 
       <div class="identity-card">
         <label>
-          Display name
+          <span class="field-title">Display name</span>
           <input id="nameInput" autocomplete="name" maxlength="40" placeholder="e.g. Jordan">
         </label>
         <label>
-          Edit PIN
+          <span class="field-title">Edit PIN</span>
           <input id="pinInput" type="password" inputmode="text" maxlength="12" placeholder="6–12 characters">
           <small>Use this to reopen or change your bracket before lock. Keep it 6–12 characters.</small>
         </label>
@@ -91,7 +90,7 @@
           <p>These do not add points. They are only used, in order, if bracket scores are tied.</p>
         </div>
         <label>
-          How many games will the World Series go?
+          <span class="field-title">How many games will the World Series go?</span>
           <select id="wsGames">
             <option value="">Choose 4–7 games</option>
             <option value="4">4 games</option>
@@ -101,12 +100,12 @@
           </select>
         </label>
         <label>
-          Total runs in the World Series
+          <span class="field-title">Total runs in the World Series</span>
           <input id="wsRuns" type="number" inputmode="numeric" min="1" max="150" placeholder="e.g. 42">
           <small>Best guess is fine — this is only a tiebreaker.</small>
         </label>
         <label>
-          Total home runs in the World Series
+          <span class="field-title">Total home runs in the World Series</span>
           <input id="wsHRs" type="number" inputmode="numeric" min="0" max="80" placeholder="e.g. 12">
           <small>Best guess is fine — this is only a tiebreaker.</small>
         </label>
@@ -126,7 +125,13 @@
           <p class="eyebrow">LIVE POOL</p>
           <h2>Scoreboard</h2>
         </div>
-        <button id="refreshDashboardBtn" class="secondary">Refresh</button>
+        <div class="dashboard-actions">
+          <div class="la-scorpy-badge" aria-label="Scorpy's Los Angeles corner">
+            <span class="la-cap">LA</span>
+            <span>Scorpy's LA corner</span>
+          </div>
+          <button id="refreshDashboardBtn" class="secondary">Refresh</button>
+        </div>
       </div>
       <div id="dashboardLocked" class="notice">Everyone else's picks will appear here once the pool locks.</div>
       <div id="dashboardContent" class="hidden">
@@ -145,40 +150,6 @@
           <div id="popularity" class="popularity-grid"></div>
         </article>
       </div>
-    </section>
-
-    <section id="adminView" class="view">
-      <div class="admin-card">
-        <p class="eyebrow">COMMISSIONER</p>
-        <h2>Pool controls</h2>
-        <p class="subtle">The password is checked only by Apps Script and is never stored in this site.</p>
-        <label>Commissioner password <input id="adminPassword" type="password" autocomplete="current-password"></label>
-        <div class="admin-actions">
-          <button id="lockNowBtn" class="secondary">Lock now</button>
-          <button id="autoLockBtn" class="secondary">Use deadline</button>
-        </div>
-        <label class="admin-note-label">Commissioner's note
-          <input id="commissionerNoteInput" maxlength="160" placeholder="e.g. Picks due before first pitch Tuesday">
-        </label>
-        <button id="saveNoteBtn" class="secondary">Save note</button>
-      </div>
-      <div class="panel api-panel">
-        <div class="panel-heading"><h3>MLB data</h3><span>Automatic scoring source</span></div>
-        <div class="api-health">
-          <div><strong>MLB schedule</strong><span id="mlbScheduleHealth">Not tested</span></div>
-          <div><strong>MLB results</strong><span id="mlbResultsHealth">Not synced</span></div>
-          <div><strong>Google Sheet</strong><span id="sheetHealth">Connected</span></div>
-        </div>
-        <button id="syncResultsBtn" class="primary">Sync MLB results now</button>
-        <p class="subtle compact">Series winners and World Series tiebreaker totals update automatically from MLB data. Manual result entry is kept below only as a fallback.</p>
-      </div>
-      <details class="panel manual-fallback">
-        <summary>Manual results fallback</summary>
-        <div class="panel-heading"><h3>Record official series winners</h3><span>Use only if MLB data is delayed</span></div>
-        <div id="resultsEditor"></div>
-        <button id="saveResultsBtn" class="secondary">Save manual results</button>
-      </details>
-      <p id="adminMessage" class="form-message"></p>
     </section>
   </main>
 
