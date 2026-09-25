@@ -20,7 +20,8 @@ function doPost(e) {
       getResults: () => ({ok:true,results:getResults_()}),
       setResults: () => setResults_(body),
       setLock: () => setLock_(body),
-      setCommissionerNote: () => setCommissionerNote_(body)
+      setCommissionerNote: () => setCommissionerNote_(body),
+      syncMlbResults: () => syncMlbResults_(body)
     };
     if (!handlers[action]) throw new Error("Unknown action");
     return json_(handlers[action]());
@@ -42,8 +43,8 @@ function ss_() {
 
 function setupPool() {
   const ss = ss_();
-  ensureSheet_("Picks", ["name","pinHash"].concat(PICK_FIELDS,["wsGames","submittedAt","lastEditedAt"]));
-  ensureSheet_("Results", PICK_FIELDS.concat(["wsGames","updatedAt"]));
+  ensureSheet_("Picks", ["name","pinHash"].concat(PICK_FIELDS,["wsGames","wsRuns","wsHRs","submittedAt","lastEditedAt"]));
+  ensureSheet_("Results", PICK_FIELDS.concat(["wsGames","wsRuns","wsHRs","updatedAt"]));
   ensureSheet_("Config", ["key","value"]);
   const config = ss.getSheetByName("Config");
   const current = config.getDataRange().getValues().slice(1);
@@ -141,8 +142,14 @@ function validatePicks_(picks) {
   if (![out.nlds1,out.nlds2].includes(out.nlcs)) throw new Error("Impossible bracket pick: nlcs");
   if (![out.alcs,out.nlcs].includes(out.ws)) throw new Error("Impossible bracket pick: ws");
   const g=Number((picks||{}).wsGames);
-  if (![4,5,6,7].includes(g)) throw new Error("World Series tiebreaker must be 4–7");
+  const runs=Number((picks||{}).wsRuns);
+  const hrs=Number((picks||{}).wsHRs);
+  if (![4,5,6,7].includes(g)) throw new Error("World Series games tiebreaker must be 4–7");
+  if (!Number.isInteger(runs) || runs < 1 || runs > 150) throw new Error("World Series runs tiebreaker must be a whole number from 1–150");
+  if (!Number.isInteger(hrs) || hrs < 0 || hrs > 80) throw new Error("World Series home runs tiebreaker must be a whole number from 0–80");
   out.wsGames=g;
+  out.wsRuns=runs;
+  out.wsHRs=hrs;
   return out;
 }
 
@@ -219,8 +226,9 @@ function setResults_(body) {
     const v=String(incoming[f]||"").trim().toUpperCase();
     if (v) result[f]=v; else delete result[f];
   });
-  if (incoming.wsGames && [4,5,6,7].includes(Number(incoming.wsGames))) result.wsGames=Number(incoming.wsGames);
-  else delete result.wsGames;
+  if (incoming.wsGames && [4,5,6,7].includes(Number(incoming.wsGames))) result.wsGames=Number(incoming.wsGames); else delete result.wsGames;
+  if (incoming.wsRuns !== "" && incoming.wsRuns != null && Number.isFinite(Number(incoming.wsRuns))) result.wsRuns=Number(incoming.wsRuns); else delete result.wsRuns;
+  if (incoming.wsHRs !== "" && incoming.wsHRs != null && Number.isFinite(Number(incoming.wsHRs))) result.wsHRs=Number(incoming.wsHRs); else delete result.wsHRs;
   result.updatedAt=new Date().toISOString();
   const row=headers.map(h=>result[h]??"");
   if (sh.getLastRow()<2) sh.appendRow(row); else sh.getRange(2,1,1,row.length).setValues([row]);
@@ -245,4 +253,63 @@ function setCommissionerNote_(body) {
   if (idx<0) sh.appendRow(["commissionerNote",note]);
   else sh.getRange(idx+1,2).setValue(note);
   return {ok:true,note};
+}
+
+function syncMlbResults_(body) {
+  requireAdmin_(body.adminPassword);
+  const url="https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=2026&gameTypes=F,D,L,W&hydrate=linescore";
+  const resp=UrlFetchApp.fetch(url,{muteHttpExceptions:true});
+  if (resp.getResponseCode() !== 200) throw new Error("MLB schedule request failed");
+  const payload=JSON.parse(resp.getContentText());
+  const games=(payload.dates||[]).reduce((all,d)=>all.concat(d.games||[]),[]);
+  const completed=games.filter(g=>g.status && g.status.abstractGameState==="Final");
+  const groups={};
+  completed.forEach(g=>{
+    const a=g.teams.away.team.abbreviation||g.teams.away.team.name;
+    const h=g.teams.home.team.abbreviation||g.teams.home.team.name;
+    const key=[a,h].sort().join("|")+"|"+g.gameType;
+    if(!groups[key]) groups[key]={gameType:g.gameType,teams:[a,h],wins:{},games:[]};
+    const winner=g.teams.away.isWinner?a:(g.teams.home.isWinner?h:null);
+    if(winner) groups[key].wins[winner]=(groups[key].wins[winner]||0)+1;
+    groups[key].games.push(g);
+  });
+  const result=getResults_();
+  Object.keys(groups).forEach(key=>{
+    const s=groups[key], need=s.gameType==="F"?2:(s.gameType==="D"?3:4);
+    const winner=Object.keys(s.wins).find(t=>s.wins[t]>=need);
+    if(!winner) return;
+    const teams=s.teams;
+    if(s.gameType==="F"){
+      if(teams.includes("TEX")||teams.includes("CWS")) result.alWC1=winner;
+      else if(teams.includes("NYY")||teams.includes("BOS")) result.alWC2=winner;
+      else if(teams.includes("ATL")||teams.includes("PHI")) result.nlWC1=winner;
+      else if(teams.includes("CHC")||teams.includes("SD")) result.nlWC2=winner;
+    } else if(s.gameType==="D"){
+      if(teams.includes("TB")) result.alds1=winner;
+      else if(teams.includes("CLE")) result.alds2=winner;
+      else if(teams.includes("MIL")) result.nlds1=winner;
+      else if(teams.includes("LAD")) result.nlds2=winner;
+    } else if(s.gameType==="L"){
+      if(teams.some(t=>AL_TEAMS.includes(t))) result.alcs=winner; else result.nlcs=winner;
+    } else if(s.gameType==="W") result.ws=winner;
+  });
+  const wsGames=completed.filter(g=>g.gameType==="W");
+  if(wsGames.length){
+    result.wsGames=wsGames.length;
+    result.wsRuns=wsGames.reduce((sum,g)=>sum+Number(g.teams.away.score||0)+Number(g.teams.home.score||0),0);
+    let hrs=0;
+    wsGames.forEach(g=>{
+      try{
+        const b=JSON.parse(UrlFetchApp.fetch("https://statsapi.mlb.com/api/v1/game/"+g.gamePk+"/boxscore").getContentText());
+        hrs += Number(b.teams.away.teamStats.batting.homeRuns||0)+Number(b.teams.home.teamStats.batting.homeRuns||0);
+      }catch(err){}
+    });
+    result.wsHRs=hrs;
+  }
+  result.updatedAt=new Date().toISOString();
+  const sh=ss_().getSheetByName("Results");
+  const headers=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  const row=headers.map(h=>result[h]??"");
+  if(sh.getLastRow()<2) sh.appendRow(row); else sh.getRange(2,1,1,row.length).setValues([row]);
+  return {ok:true,results:result,syncedAt:result.updatedAt,completedGames:completed.length};
 }
