@@ -91,13 +91,13 @@ function safeEqual_(a,b) {
 
 function cleanName_(name) {
   const n=String(name||"").trim().replace(/\s+/g," ");
-  if (n.length < 1 || n.length > 40) throw new Error("Name must be 1–40 characters");
+  if (n.length < 1 || n.length > 40) throw new Error("Name must be 1–40 characters");\n  if (/^[=+@-]/.test(n)) throw new Error("Name contains unsupported characters");
   return n;
 }
 
 function hashPin_(name,pin) {
   const p=String(pin||"");
-  if (p.length < 4 || p.length > 12) throw new Error("PIN must be 4–12 characters");
+  if (p.length < 6 || p.length > 12) throw new Error("PIN must be 6–12 characters");
   const secret=PropertiesService.getScriptProperties().getProperty("PIN_PEPPER");
   if (!secret) throw new Error("PIN_PEPPER is not configured");
   const bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, cleanName_(name).toLowerCase()+"|"+p+"|"+secret);
