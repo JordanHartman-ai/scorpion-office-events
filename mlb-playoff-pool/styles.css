@@ -40,3 +40,25 @@ body{background:linear-gradient(180deg,#07111d 0,#0b1724 48%,#07111d 100%)}
 .api-health{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 16px}.api-health>div{background:#091725;border:1px solid #2e506c;border-radius:12px;padding:14px}.api-health strong,.api-health span{display:block}.api-health span{margin-top:5px;color:#86c7ff;font-size:13px}
 .compact{margin-bottom:0}.manual-fallback summary{cursor:pointer;font-weight:800;color:#a9c9e6}
 @media(max-width:900px){.hero-side{width:100%;justify-content:space-between}.hero-scorpy{width:110px;height:110px}.submit-card{grid-template-columns:1fr}.tiebreaker-intro{grid-column:auto}.round{min-height:620px}.api-health{grid-template-columns:1fr}}
+
+/* Final pre-share QC */
+.tabs{width:max-content}
+.identity-card{align-items:start}
+.identity-card .field-title{display:block;min-height:20px}
+.identity-card small{display:block;min-height:34px}
+.identity-card>.secondary{align-self:start;margin-top:27px}
+.submit-card{align-items:start}
+.submit-card .field-title{display:flex;align-items:flex-end;min-height:42px}
+.submit-card>label small{display:block;min-height:34px}
+.submit-card>.primary{align-self:start;margin-top:42px;min-height:46px}
+.matchup-picked{border-color:#5ba7ff;box-shadow:0 0 0 1px rgba(91,167,255,.22),0 10px 24px rgba(0,0,0,.14)}
+.team-btn.selected{background:linear-gradient(90deg,#1674cc,#16466f)!important;border-color:#7bc5ff!important;box-shadow:0 0 0 2px rgba(123,197,255,.2)!important}
+.dashboard-actions{display:flex;align-items:center;gap:12px}
+.la-scorpy-badge{display:flex;align-items:center;gap:8px;padding:7px 11px;border-radius:999px;background:#f4f8fc;color:#173958;border:1px solid #c4dced;font-size:12px;font-weight:700}
+.la-cap{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#145da0;color:#fff;font:800 13px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em}
+@media(max-width:900px){
+  .identity-card>.secondary,.submit-card>.primary{margin-top:0}
+  .submit-card .field-title{min-height:0}
+  .identity-card small,.submit-card>label small{min-height:0}
+  .dashboard-actions{width:100%;justify-content:space-between}
+}
