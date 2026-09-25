@@ -44,7 +44,7 @@ function setupPool() {
   const current = config.getDataRange().getValues().slice(1);
   const keys = new Set(current.map(r=>r[0]));
   if (!keys.has("lockAt")) config.appendRow(["lockAt",""]);
-  if (!keys.has("locked")) config.appendRow(["locked","false"]);
+  if (!keys.has("locked")) config.appendRow(["locked",""]);
   return "Pool sheets ready";
 }
 
@@ -72,7 +72,8 @@ function configMap_() {
 function getStatus_() {
   const c=configMap_();
   const timed = c.lockAt && !isNaN(Date.parse(c.lockAt)) && Date.now() >= Date.parse(c.lockAt);
-  return {locked: String(c.locked).toLowerCase()==="true" || !!timed, lockAt:c.lockAt || null};
+  const manual = String(c.locked || "").trim().toLowerCase();
+  return {locked: manual==="true" ? true : !!timed, lockAt:c.lockAt || null, manualLock:manual==="true"};
 }
 
 function requireAdmin_(password) {
@@ -193,7 +194,7 @@ function setLock_(body) {
   const sh=ss_().getSheetByName("Config");
   const data=sh.getDataRange().getValues();
   const idx=data.findIndex((r,i)=>i>0 && r[0]==="locked");
-  const value=body.locked===true ? "true" : "false";
+  const value=body.locked===true ? "true" : "";
   if (idx<0) sh.appendRow(["locked",value]); else sh.getRange(idx+1,2).setValue(value);
   return {ok:true,status:getStatus_()};
 }
