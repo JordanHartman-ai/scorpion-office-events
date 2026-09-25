@@ -6,7 +6,7 @@
     alds1:"ALDS: 1 vs WC", alds2:"ALDS: 2 vs WC", nlds1:"NLDS: 1 vs WC", nlds2:"NLDS: 2 vs WC",
     alcs:"ALCS", nlcs:"NLCS", ws:"World Series"
   };
-  const state = { picks:{}, status:{locked:false,lockAt:null,entryCount:0,commissionerNote:""}, results:{}, allPicks:[] };
+  const state = { picks:{}, status:{locked:false,lockAt:null,entryCount:0,commissionerNote:""}, results:{}, allPicks:[], identity:{name:"",pin:""} };
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   const teamMap = Object.fromEntries([...cfg.TEAMS.AL,...cfg.TEAMS.NL].map(t=>[t.abbr,t]));
@@ -218,21 +218,58 @@
   $("#clearBtn").onclick=()=>{state.picks={};$("#wsGames").value="";$("#wsRuns").value="";$("#wsHRs").value="";renderBracket()};
   $("#loadMineBtn").onclick=async()=>{
     const name=$("#nameInput").value.trim(), pin=$("#pinInput").value;
-    try{const r=await api("getPicks",{name,pin});state.picks=r.pick||{};$("#wsGames").value=r.pick?.wsGames||"";$("#wsRuns").value=r.pick?.wsRuns||"";$("#wsHRs").value=r.pick?.wsHRs||"";renderBracket();$("#submitMessage").textContent=r.pick?"Saved bracket loaded.":"No saved bracket found."}catch(e){$("#submitMessage").textContent=e.message;$("#submitMessage").className="form-message error"}
+    if(name) state.identity.name=name;
+    if(pin) state.identity.pin=pin;
+    try{
+      const r=await api("getPicks",{name:state.identity.name,pin:state.identity.pin});
+      state.picks=r.pick||{};
+      $("#nameInput").value=state.identity.name;
+      $("#pinInput").value=state.identity.pin;
+      $("#wsGames").value=r.pick?.wsGames||"";
+      $("#wsRuns").value=r.pick?.wsRuns||"";
+      $("#wsHRs").value=r.pick?.wsHRs||"";
+      renderBracket();
+      $("#submitMessage").textContent=r.pick?"Saved bracket loaded.":"No saved bracket found.";
+      $("#submitMessage").className="form-message";
+    }catch(e){
+      $("#submitMessage").textContent=e.message;
+      $("#submitMessage").className="form-message error";
+    }
   };
   $("#submitBtn").onclick=async()=>{
-    const name=$("#nameInput").value.trim(),pin=$("#pinInput").value,wsGames=$("#wsGames").value,wsRuns=$("#wsRuns").value,wsHRs=$("#wsHRs").value;
+    const visibleName=$("#nameInput").value.trim();
+    const visiblePin=$("#pinInput").value;
+    if(visibleName) state.identity.name=visibleName;
+    if(visiblePin) state.identity.pin=visiblePin;
+    const name=visibleName||state.identity.name;
+    const pin=visiblePin||state.identity.pin;
+    const wsGames=$("#wsGames").value,wsRuns=$("#wsRuns").value,wsHRs=$("#wsHRs").value;
     const missing=FIELDS.filter(f=>!state.picks[f]);
-    if(!name||pin.length<6||missing.length||!wsGames||wsRuns===""||wsHRs===""){ $("#submitMessage").textContent="Add your name, a 6+ character PIN, every series pick, and all three World Series tiebreaker guesses.";$("#submitMessage").className="form-message error";return}
+    if(!name||pin.length<6||missing.length||!wsGames||wsRuns===""||wsHRs===""){
+      $("#submitMessage").textContent="Add your name, a 6+ character PIN, every series pick, and all three World Series tiebreaker guesses.";
+      $("#submitMessage").className="form-message error";
+      return;
+    }
+    $("#nameInput").value=name;
+    $("#pinInput").value=pin;
     try{
       const r=await api("submitPick",{name,pin,picks:{...state.picks,wsGames,wsRuns,wsHRs},adminPassword:$("#overridePassword").value});
+      state.identity={name,pin};
+      $("#nameInput").value=name;
+      $("#pinInput").value=pin;
       const when=new Date(r.lastEditedAt||Date.now()).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
-      $("#submitMessage").textContent=r.updated?"Bracket updated.":"Bracket submitted.";$("#submitMessage").className="form-message success";
-      $("#submissionReceipt").textContent=`Locked in, ${name} · ${when}`;
+      $("#submitMessage").textContent=r.updated?"Bracket updated.":"Bracket submitted.";
+      $("#submitMessage").className="form-message success";
+      $("#submissionReceipt").textContent=`Locked in, ${name} · ${when} · You can keep editing until the pool locks.`;
       $("#submissionReceipt").classList.remove("hidden");
       if(typeof r.entryCount==="number"){state.status.entryCount=r.entryCount;updateStatusUI();}
-    }catch(e){$("#submitMessage").textContent=e.message;$("#submitMessage").className="form-message error"}
+    }catch(e){
+      $("#submitMessage").textContent=e.message;
+      $("#submitMessage").className="form-message error";
+    }
   };
+  $("#nameInput").addEventListener("input",e=>state.identity.name=e.target.value.trim());
+  $("#pinInput").addEventListener("input",e=>state.identity.pin=e.target.value);
   $("#rulesBtn").onclick=()=>$("#rulesPanel").classList.toggle("hidden");
   $("#refreshDashboardBtn").onclick=refreshDashboard;
   if(window.SCORPY_MLB_ASSETS?.length) {
