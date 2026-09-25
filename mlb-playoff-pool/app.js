@@ -6,7 +6,7 @@
     alds1:"ALDS: 1 vs WC", alds2:"ALDS: 2 vs WC", nlds1:"NLDS: 1 vs WC", nlds2:"NLDS: 2 vs WC",
     alcs:"ALCS", nlcs:"NLCS", ws:"World Series"
   };
-  const state = { picks:{}, status:{locked:false,lockAt:null}, results:{}, allPicks:[] };
+  const state = { picks:{}, status:{locked:false,lockAt:null,entryCount:0,commissionerNote:""}, results:{}, allPicks:[] };
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   const teamMap = Object.fromEntries([...cfg.TEAMS.AL,...cfg.TEAMS.NL].map(t=>[t.abbr,t]));
@@ -89,6 +89,12 @@
 
   function updateStatusUI() {
     const locked=state.status.locked;
+    const count=Number(state.status.entryCount)||0;
+    $("#entryCount").textContent=`${count} bracket${count===1?"":"s"} entered`;
+    const note=String(state.status.commissionerNote||"").trim();
+    $("#commissionerNote").textContent=note;
+    $("#commissionerNote").classList.toggle("hidden",!note);
+    $("#commissionerNoteInput").value=note;
     $("#lockDot").className="status-dot "+(locked?"locked":"live");
     $("#lockLabel").textContent=locked?"Picks locked":"Picks open";
     $("#submitBtn").textContent=locked?"Submit with commissioner override":"Submit bracket";
@@ -121,7 +127,13 @@
     if(!locked)return;
     const tiebreak=Number(state.results.wsGames)||null;
     const rows=state.allPicks.map(p=>({...p,score:scorePick(p)})).sort((a,b)=>b.score-a.score || (tiebreak ? Math.abs(Number(a.wsGames)-tiebreak)-Math.abs(Number(b.wsGames)-tiebreak) : 0));
-    $("#leaderboard").innerHTML=rows.map((p,i)=>`<div class="leader-row"><span class="rank">${i+1}</span><span>${esc(p.name)}</span><span class="score">${p.score}/11</span></div>`).join("") || "<p class='subtle'>No entries yet.</p>";
+    const decided=FIELDS.filter(f=>state.results[f]).length;
+    $("#leaderboard").innerHTML=rows.map((p,i)=>{
+      const maxPossible=p.score+(11-decided);
+      const leaderScore=rows[0]?.score||0;
+      const eliminated=maxPossible<leaderScore;
+      return `<div class="leader-row"><span class="rank">${i+1}</span><span><strong>${esc(p.name)}</strong><small>${eliminated?"Eliminated":`Max ${maxPossible}`}</small></span><span class="score">${p.score}/11</span></div>`;
+    }).join("") || "<p class='subtle'>No entries yet.</p>";
     $("#popularity").innerHTML=FIELDS.map(f=>{
       const counts={}; rows.forEach(p=>{if(p[f])counts[p[f]]=(counts[p[f]]||0)+1});
       const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]; if(!top)return "";
@@ -166,12 +178,26 @@
     if(!name||pin.length<6||missing.length||!wsGames){$("#submitMessage").textContent="Add your name, a 6+ character PIN, every series pick, and the World Series length.";$("#submitMessage").className="form-message error";return}
     try{
       const r=await api("submitPick",{name,pin,picks:{...state.picks,wsGames},adminPassword:$("#overridePassword").value});
+      const when=new Date(r.lastEditedAt||Date.now()).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
       $("#submitMessage").textContent=r.updated?"Bracket updated.":"Bracket submitted.";$("#submitMessage").className="form-message success";
+      $("#submissionReceipt").textContent=`Locked in, ${name} · ${when}`;
+      $("#submissionReceipt").classList.remove("hidden");
+      if(typeof r.entryCount==="number"){state.status.entryCount=r.entryCount;updateStatusUI();}
     }catch(e){$("#submitMessage").textContent=e.message;$("#submitMessage").className="form-message error"}
   };
+  $("#rulesBtn").onclick=()=>$("#rulesPanel").classList.toggle("hidden");
   $("#refreshDashboardBtn").onclick=refreshDashboard;
   $("#lockNowBtn").onclick=()=>setLock(true); $("#autoLockBtn").onclick=()=>setLock(null);
   async function setLock(locked){try{const r=await api("setLock",{adminPassword:$("#adminPassword").value,locked});state.status=r.status;updateStatusUI();$("#adminMessage").textContent=locked===true?"Pool locked now.":"Pool is using the configured deadline.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}}
+  $("#saveNoteBtn").onclick=async()=>{
+    try{
+      const r=await api("setCommissionerNote",{adminPassword:$("#adminPassword").value,note:$("#commissionerNoteInput").value});
+      state.status.commissionerNote=r.note||"";
+      updateStatusUI();
+      $("#adminMessage").textContent="Commissioner note saved.";
+      $("#adminMessage").className="form-message success";
+    }catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}
+  };
   $("#saveResultsBtn").onclick=async()=>{
     const results={};FIELDS.forEach(f=>{const v=$("#res-"+f).value;if(v)results[f]=v});results.wsGames=$("#res-wsGames").value||"";
     try{const r=await api("setResults",{adminPassword:$("#adminPassword").value,results});state.results=r.results;$("#adminMessage").textContent="Results saved.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}
