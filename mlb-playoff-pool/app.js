@@ -163,7 +163,7 @@
   $("#submitBtn").onclick=async()=>{
     const name=$("#nameInput").value.trim(),pin=$("#pinInput").value,wsGames=$("#wsGames").value;
     const missing=FIELDS.filter(f=>!state.picks[f]);
-    if(!name||pin.length<4||missing.length||!wsGames){$("#submitMessage").textContent="Add your name, a 4+ character PIN, every series pick, and the World Series length.";$("#submitMessage").className="form-message error";return}
+    if(!name||pin.length<6||missing.length||!wsGames){$("#submitMessage").textContent="Add your name, a 6+ character PIN, every series pick, and the World Series length.";$("#submitMessage").className="form-message error";return}
     try{
       const r=await api("submitPick",{name,pin,picks:{...state.picks,wsGames},adminPassword:$("#overridePassword").value});
       $("#submitMessage").textContent=r.updated?"Bracket updated.":"Bracket submitted.";$("#submitMessage").className="form-message success";
