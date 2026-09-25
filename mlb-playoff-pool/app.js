@@ -208,11 +208,6 @@
     $("#"+b.dataset.view+"View").classList.add("active");
     if(b.dataset.view==="dashboard")refreshDashboard();
   }));
-  $("#adminToggleBtn").onclick=()=>{
-    document.querySelectorAll(".tab[data-view]").forEach(x=>x.classList.remove("active"));
-    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
-    $("#adminView").classList.add("active");
-  };
   $("#chalkBtn").onclick=()=>autoPick("chalk"); $("#randomBtn").onclick=()=>autoPick("random");
   $("#clearBtn").onclick=()=>{state.picks={};$("#wsGames").value="";$("#wsRuns").value="";$("#wsHRs").value="";renderBracket()};
   $("#loadMineBtn").onclick=async()=>{
@@ -234,39 +229,6 @@
   };
   $("#rulesBtn").onclick=()=>$("#rulesPanel").classList.toggle("hidden");
   $("#refreshDashboardBtn").onclick=refreshDashboard;
-  $("#lockNowBtn").onclick=()=>setLock(true); $("#autoLockBtn").onclick=()=>setLock(null);
-  async function setLock(locked){try{const r=await api("setLock",{adminPassword:$("#adminPassword").value,locked});state.status=r.status;updateStatusUI();$("#adminMessage").textContent=locked===true?"Pool locked now.":"Pool is using the configured deadline.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}}
-  $("#saveNoteBtn").onclick=async()=>{
-    try{
-      const r=await api("setCommissionerNote",{adminPassword:$("#adminPassword").value,note:$("#commissionerNoteInput").value});
-      state.status.commissionerNote=r.note||"";
-      updateStatusUI();
-      $("#adminMessage").textContent="Commissioner note saved.";
-      $("#adminMessage").className="form-message success";
-    }catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}
-  };
-  $("#syncResultsBtn").onclick=async()=>{
-    try{
-      $("#mlbScheduleHealth").textContent="Testing…";
-      $("#mlbResultsHealth").textContent="Syncing…";
-      const r=await api("syncMlbResults",{adminPassword:$("#adminPassword").value});
-      state.results=r.results||{};
-      $("#mlbScheduleHealth").textContent="Connected";
-      $("#mlbResultsHealth").textContent=r.syncedAt ? "Synced "+new Date(r.syncedAt).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Synced";
-      $("#adminMessage").textContent="MLB results synced.";
-      $("#adminMessage").className="form-message success";
-      renderResultsEditor();
-    }catch(e){
-      $("#mlbScheduleHealth").textContent="Error";
-      $("#mlbResultsHealth").textContent="Sync failed";
-      $("#adminMessage").textContent=e.message;
-      $("#adminMessage").className="form-message error";
-    }
-  };
-  $("#saveResultsBtn").onclick=async()=>{
-    const results={};FIELDS.forEach(f=>{const v=$("#res-"+f).value;if(v)results[f]=v});results.wsGames=$("#res-wsGames").value||"";results.wsRuns=state.results.wsRuns||"";results.wsHRs=state.results.wsHRs||"";
-    try{const r=await api("setResults",{adminPassword:$("#adminPassword").value,results});state.results=r.results;$("#adminMessage").textContent="Results saved.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}
-  };
   if(window.SCORPY_MLB_ASSETS?.length) $("#heroScorpy").src=window.SCORPY_MLB_ASSETS[0].src;
   renderBracket();
   renderResultsEditor();
