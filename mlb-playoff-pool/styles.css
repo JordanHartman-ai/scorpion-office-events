@@ -62,3 +62,9 @@ body{background:linear-gradient(180deg,#07111d 0,#0b1724 48%,#07111d 100%)}
   .identity-card small,.submit-card>label small{min-height:0}
   .dashboard-actions{width:100%;justify-content:space-between}
 }
+
+/* Submission UX + dashboard mascot cleanup */
+.la-scorpy-badge{padding:0;background:transparent;border:0;border-radius:0}
+.dashboard-scorpy{display:block;width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.2))}
+.dashboard-actions{gap:14px}
+@media(max-width:900px){.dashboard-scorpy{width:58px;height:58px}}
