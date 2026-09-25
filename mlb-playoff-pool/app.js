@@ -229,7 +229,7 @@
       $("#wsRuns").value=r.pick?.wsRuns||"";
       $("#wsHRs").value=r.pick?.wsHRs||"";
       renderBracket();
-      $("#submitMessage").textContent=r.pick?"Saved bracket loaded.":"No saved bracket found.";
+      $("#submitMessage").textContent=r.pick?"Your existing bracket is ready to edit.":"No existing bracket found for that name + PIN.";
       $("#submitMessage").className="form-message";
     }catch(e){
       $("#submitMessage").textContent=e.message;
