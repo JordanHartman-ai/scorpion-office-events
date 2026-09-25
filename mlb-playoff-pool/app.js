@@ -167,10 +167,10 @@
     }catch(e){$("#submitMessage").textContent=e.message;$("#submitMessage").className="form-message error"}
   };
   $("#refreshDashboardBtn").onclick=refreshDashboard;
-  $("#lockNowBtn").onclick=()=>setLock(true); $("#unlockBtn").onclick=()=>setLock(false);
-  async function setLock(locked){try{const r=await api("setLock",{adminPassword:$("#adminPassword").value,locked});state.status=r.status;updateStatusUI();$("#adminMessage").textContent=locked?"Pool locked.":"Pool unlocked.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}}
+  $("#lockNowBtn").onclick=()=>setLock(true); $("#autoLockBtn").onclick=()=>setLock(null);
+  async function setLock(locked){try{const r=await api("setLock",{adminPassword:$("#adminPassword").value,locked});state.status=r.status;updateStatusUI();$("#adminMessage").textContent=locked===true?"Pool locked now.":"Pool is using the configured deadline.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}}
   $("#saveResultsBtn").onclick=async()=>{
-    const results={};FIELDS.forEach(f=>{const v=$("#res-"+f).value;if(v)results[f]=v});results.wsGames=state.results.wsGames||"";
+    const results={};FIELDS.forEach(f=>{const v=$("#res-"+f).value;if(v)results[f]=v});results.wsGames=$("#res-wsGames").value||"";
     try{const r=await api("setResults",{adminPassword:$("#adminPassword").value,results});state.results=r.results;$("#adminMessage").textContent="Results saved.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}
   };
   refreshStatus();
