@@ -1,6 +1,12 @@
 const PICK_FIELDS = ["alWC1","alWC2","nlWC1","nlWC2","alds1","alds2","nlds1","nlds2","alcs","nlcs","ws"];
 const AL_TEAMS = ["TB","CLE","TEX","NYY","BOS","CWS"];
 const NL_TEAMS = ["MIL","LAD","ATL","CHC","SD","PHI"];
+const TEAM_ABBR_BY_ID = {
+  139:"TB",114:"CLE",140:"TEX",147:"NYY",111:"BOS",145:"CWS",
+  158:"MIL",119:"LAD",144:"ATL",112:"CHC",135:"SD",143:"PHI"
+};
+const AL_TEAM_IDS = [139,114,140,147,111,145];
+const NL_TEAM_IDS = [158,119,144,112,135,143];
 
 function doGet(e) {
   return json_({ok:true,message:"MLB playoff pool API",status:getStatus_()});
@@ -256,7 +262,13 @@ function setCommissionerNote_(body) {
 }
 
 function syncMlbResults_(body) {
-  requireAdmin_(body.adminPassword);
+  const props=PropertiesService.getScriptProperties();
+  const hasAdmin=body && body.adminPassword;
+  if (hasAdmin) requireAdmin_(body.adminPassword);
+  const last=Number(props.getProperty("MLB_LAST_SYNC_MS")||0);
+  if (!hasAdmin && last && Date.now()-last < 15*60*1000) {
+    return {ok:true,results:getResults_(),syncedAt:new Date(last).toISOString(),cached:true};
+  }
   const url="https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=2026&gameTypes=F,D,L,W&hydrate=linescore";
   const resp=UrlFetchApp.fetch(url,{muteHttpExceptions:true});
   if (resp.getResponseCode() !== 200) throw new Error("MLB schedule request failed");
@@ -265,32 +277,35 @@ function syncMlbResults_(body) {
   const completed=games.filter(g=>g.status && g.status.abstractGameState==="Final");
   const groups={};
   completed.forEach(g=>{
-    const a=g.teams.away.team.abbreviation||g.teams.away.team.name;
-    const h=g.teams.home.team.abbreviation||g.teams.home.team.name;
-    const key=[a,h].sort().join("|")+"|"+g.gameType;
-    if(!groups[key]) groups[key]={gameType:g.gameType,teams:[a,h],wins:{},games:[]};
-    const winner=g.teams.away.isWinner?a:(g.teams.home.isWinner?h:null);
-    if(winner) groups[key].wins[winner]=(groups[key].wins[winner]||0)+1;
+    const aId=Number(g.teams.away.team.id);
+    const hId=Number(g.teams.home.team.id);
+    const key=[aId,hId].sort((x,y)=>x-y).join("|")+"|"+g.gameType;
+    if(!groups[key]) groups[key]={gameType:g.gameType,teamIds:[aId,hId],wins:{},games:[]};
+    const winnerId=g.teams.away.isWinner?aId:(g.teams.home.isWinner?hId:null);
+    if(winnerId) groups[key].wins[winnerId]=(groups[key].wins[winnerId]||0)+1;
     groups[key].games.push(g);
   });
   const result=getResults_();
   Object.keys(groups).forEach(key=>{
     const s=groups[key], need=s.gameType==="F"?2:(s.gameType==="D"?3:4);
-    const winner=Object.keys(s.wins).find(t=>s.wins[t]>=need);
+    const winnerId=Number(Object.keys(s.wins).find(t=>s.wins[t]>=need));
+    if(!winnerId) return;
+    const winner=TEAM_ABBR_BY_ID[winnerId];
     if(!winner) return;
-    const teams=s.teams;
+    const teams=s.teamIds;
     if(s.gameType==="F"){
-      if(teams.includes("TEX")||teams.includes("CWS")) result.alWC1=winner;
-      else if(teams.includes("NYY")||teams.includes("BOS")) result.alWC2=winner;
-      else if(teams.includes("ATL")||teams.includes("PHI")) result.nlWC1=winner;
-      else if(teams.includes("CHC")||teams.includes("SD")) result.nlWC2=winner;
+      if(teams.includes(140)||teams.includes(145)) result.alWC1=winner;
+      else if(teams.includes(147)||teams.includes(111)) result.alWC2=winner;
+      else if(teams.includes(144)||teams.includes(143)) result.nlWC1=winner;
+      else if(teams.includes(112)||teams.includes(135)) result.nlWC2=winner;
     } else if(s.gameType==="D"){
-      if(teams.includes("TB")) result.alds1=winner;
-      else if(teams.includes("CLE")) result.alds2=winner;
-      else if(teams.includes("MIL")) result.nlds1=winner;
-      else if(teams.includes("LAD")) result.nlds2=winner;
+      if(teams.includes(139)) result.alds1=winner;
+      else if(teams.includes(114)) result.alds2=winner;
+      else if(teams.includes(158)) result.nlds1=winner;
+      else if(teams.includes(119)) result.nlds2=winner;
     } else if(s.gameType==="L"){
-      if(teams.some(t=>AL_TEAMS.includes(t))) result.alcs=winner; else result.nlcs=winner;
+      if(teams.some(t=>AL_TEAM_IDS.includes(t))) result.alcs=winner;
+      else if(teams.some(t=>NL_TEAM_IDS.includes(t))) result.nlcs=winner;
     } else if(s.gameType==="W") result.ws=winner;
   });
   const wsGames=completed.filter(g=>g.gameType==="W");
@@ -307,6 +322,7 @@ function syncMlbResults_(body) {
     result.wsHRs=hrs;
   }
   result.updatedAt=new Date().toISOString();
+  props.setProperty("MLB_LAST_SYNC_MS",String(Date.now()));
   const sh=ss_().getSheetByName("Results");
   const headers=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
   const row=headers.map(h=>result[h]??"");
