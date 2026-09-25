@@ -55,14 +55,14 @@
 
   function renderBracket() {
     $("#bracket").innerHTML = rounds().map(r=>`
-      <div class="round"><div class="round-title"><span>${r.title}</span></div>
+      <div class="round"><div class="round-title"><span>${r.title}</span></div><div class="round-games">
       ${r.games.map(([field,teams])=>`
         <div class="matchup">
           <div class="matchup-label">${LABELS[field]}</div>
           ${teams.map(t => t ? `<button class="team-btn ${state.picks[field]===t.abbr?"selected":""}" data-field="${field}" data-team="${t.abbr}">
             <span class="seed">${t.seed}</span><span>${esc(t.name)}</span>
           </button>` : `<button class="team-btn disabled" disabled><span class="seed">—</span><span>Make earlier pick</span></button>`).join("")}
-        </div>`).join("")}</div>`).join("");
+        </div>`).join("")}</div></div>`).join("");
     document.querySelectorAll(".team-btn[data-team]").forEach(b=>b.addEventListener("click",()=>{
       const f=b.dataset.field; const v=b.dataset.team;
       if(state.picks[f]!==v) invalidateAfter(f);
@@ -143,8 +143,19 @@
     $("#dashboardLocked").classList.toggle("hidden",locked);
     $("#dashboardContent").classList.toggle("hidden",!locked);
     if(!locked)return;
-    const tiebreak=Number(state.results.wsGames)||null;
-    const rows=state.allPicks.map(p=>({...p,score:scorePick(p)})).sort((a,b)=>b.score-a.score || (tiebreak ? Math.abs(Number(a.wsGames)-tiebreak)-Math.abs(Number(b.wsGames)-tiebreak) : 0));
+    const tiebreaks={
+      wsGames:Number(state.results.wsGames)||null,
+      wsRuns:Number(state.results.wsRuns)||null,
+      wsHRs:Number(state.results.wsHRs)||null
+    };
+    const distance=(p,key)=>tiebreaks[key]===null?0:Math.abs(Number(p[key])-tiebreaks[key]);
+    const rows=state.allPicks.map(p=>({...p,score:scorePick(p)})).sort((a,b)=>
+      b.score-a.score ||
+      distance(a,"wsGames")-distance(b,"wsGames") ||
+      distance(a,"wsRuns")-distance(b,"wsRuns") ||
+      distance(a,"wsHRs")-distance(b,"wsHRs") ||
+      new Date(a.submittedAt)-new Date(b.submittedAt)
+    );
     const decided=FIELDS.filter(f=>state.results[f]).length;
     $("#leaderboard").innerHTML=rows.map((p,i)=>{
       const maxPossible=p.score+(11-decided);
@@ -178,24 +189,29 @@
     try{const r=await api("getPicks",{name:""});state.allPicks=r.picks||[];state.results=r.results||state.results;renderDashboard();loadGames()}catch(e){$("#dashboardLocked").textContent=e.message;$("#dashboardLocked").classList.remove("hidden")}
   }
 
-  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
-    document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));
+  document.querySelectorAll(".tab[data-view]").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".tab[data-view]").forEach(x=>x.classList.toggle("active",x===b));
     document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
     $("#"+b.dataset.view+"View").classList.add("active");
     if(b.dataset.view==="dashboard")refreshDashboard();
   }));
+  $("#adminToggleBtn").onclick=()=>{
+    document.querySelectorAll(".tab[data-view]").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    $("#adminView").classList.add("active");
+  };
   $("#chalkBtn").onclick=()=>autoPick("chalk"); $("#randomBtn").onclick=()=>autoPick("random");
-  $("#clearBtn").onclick=()=>{state.picks={};$("#wsGames").value="";renderBracket()};
+  $("#clearBtn").onclick=()=>{state.picks={};$("#wsGames").value="";$("#wsRuns").value="";$("#wsHRs").value="";renderBracket()};
   $("#loadMineBtn").onclick=async()=>{
     const name=$("#nameInput").value.trim(), pin=$("#pinInput").value;
-    try{const r=await api("getPicks",{name,pin});state.picks=r.pick||{};$("#wsGames").value=r.pick?.wsGames||"";renderBracket();$("#submitMessage").textContent=r.pick?"Saved bracket loaded.":"No saved bracket found."}catch(e){$("#submitMessage").textContent=e.message;$("#submitMessage").className="form-message error"}
+    try{const r=await api("getPicks",{name,pin});state.picks=r.pick||{};$("#wsGames").value=r.pick?.wsGames||"";$("#wsRuns").value=r.pick?.wsRuns||"";$("#wsHRs").value=r.pick?.wsHRs||"";renderBracket();$("#submitMessage").textContent=r.pick?"Saved bracket loaded.":"No saved bracket found."}catch(e){$("#submitMessage").textContent=e.message;$("#submitMessage").className="form-message error"}
   };
   $("#submitBtn").onclick=async()=>{
-    const name=$("#nameInput").value.trim(),pin=$("#pinInput").value,wsGames=$("#wsGames").value;
+    const name=$("#nameInput").value.trim(),pin=$("#pinInput").value,wsGames=$("#wsGames").value,wsRuns=$("#wsRuns").value,wsHRs=$("#wsHRs").value;
     const missing=FIELDS.filter(f=>!state.picks[f]);
-    if(!name||pin.length<6||missing.length||!wsGames){$("#submitMessage").textContent="Add your name, a 6+ character PIN, every series pick, and the World Series length.";$("#submitMessage").className="form-message error";return}
+    if(!name||pin.length<6||missing.length||!wsGames||wsRuns===""||wsHRs===""){ $("#submitMessage").textContent="Add your name, a 6+ character PIN, every series pick, and all three World Series tiebreaker guesses.";$("#submitMessage").className="form-message error";return}
     try{
-      const r=await api("submitPick",{name,pin,picks:{...state.picks,wsGames},adminPassword:$("#overridePassword").value});
+      const r=await api("submitPick",{name,pin,picks:{...state.picks,wsGames,wsRuns,wsHRs},adminPassword:$("#overridePassword").value});
       const when=new Date(r.lastEditedAt||Date.now()).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
       $("#submitMessage").textContent=r.updated?"Bracket updated.":"Bracket submitted.";$("#submitMessage").className="form-message success";
       $("#submissionReceipt").textContent=`Locked in, ${name} · ${when}`;
@@ -216,10 +232,29 @@
       $("#adminMessage").className="form-message success";
     }catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}
   };
+  $("#syncResultsBtn").onclick=async()=>{
+    try{
+      $("#mlbScheduleHealth").textContent="Testing…";
+      $("#mlbResultsHealth").textContent="Syncing…";
+      const r=await api("syncMlbResults",{adminPassword:$("#adminPassword").value});
+      state.results=r.results||{};
+      $("#mlbScheduleHealth").textContent="Connected";
+      $("#mlbResultsHealth").textContent=r.syncedAt ? "Synced "+new Date(r.syncedAt).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Synced";
+      $("#adminMessage").textContent="MLB results synced.";
+      $("#adminMessage").className="form-message success";
+      renderResultsEditor();
+    }catch(e){
+      $("#mlbScheduleHealth").textContent="Error";
+      $("#mlbResultsHealth").textContent="Sync failed";
+      $("#adminMessage").textContent=e.message;
+      $("#adminMessage").className="form-message error";
+    }
+  };
   $("#saveResultsBtn").onclick=async()=>{
-    const results={};FIELDS.forEach(f=>{const v=$("#res-"+f).value;if(v)results[f]=v});results.wsGames=$("#res-wsGames").value||"";
+    const results={};FIELDS.forEach(f=>{const v=$("#res-"+f).value;if(v)results[f]=v});results.wsGames=$("#res-wsGames").value||"";results.wsRuns=state.results.wsRuns||"";results.wsHRs=state.results.wsHRs||"";
     try{const r=await api("setResults",{adminPassword:$("#adminPassword").value,results});state.results=r.results;$("#adminMessage").textContent="Results saved.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}
   };
+  if(window.SCORPY_MLB_ASSETS?.length) $("#heroScorpy").src=window.SCORPY_MLB_ASSETS[0].src;
   renderBracket();
   renderResultsEditor();
   updateStatusUI();
