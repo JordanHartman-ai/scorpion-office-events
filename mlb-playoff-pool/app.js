@@ -186,7 +186,20 @@
 
   async function refreshDashboard(){
     if(!state.status.locked){renderDashboard();return}
-    try{const r=await api("getPicks",{name:""});state.allPicks=r.picks||[];state.results=r.results||state.results;renderDashboard();loadGames()}catch(e){$("#dashboardLocked").textContent=e.message;$("#dashboardLocked").classList.remove("hidden")}
+    try{
+      try{
+        const sync=await api("syncMlbResults",{});
+        state.results=sync.results||state.results;
+      }catch(e){}
+      const r=await api("getPicks",{name:""});
+      state.allPicks=r.picks||[];
+      state.results=r.results||state.results;
+      renderDashboard();
+      loadGames();
+    }catch(e){
+      $("#dashboardLocked").textContent=e.message;
+      $("#dashboardLocked").classList.remove("hidden");
+    }
   }
 
   document.querySelectorAll(".tab[data-view]").forEach(b=>b.addEventListener("click",()=>{
