@@ -44,6 +44,21 @@
         <div id="countdown" class="countdown">Deadline loading…</div>
       </div>
 
+      <div id="commissionerNote" class="notice note hidden"></div>
+      <div class="pool-meta">
+        <span id="entryCount">0 brackets entered</span>
+        <button id="rulesBtn" class="chip ghost" type="button">How it works</button>
+      </div>
+      <div id="rulesPanel" class="panel rules-panel hidden">
+        <div class="panel-heading"><h3>How it works</h3><span>Office bragging rights</span></div>
+        <div class="rules-grid">
+          <div><strong>Scoring</strong><span>1 point per correct series winner, 11 points max.</span></div>
+          <div><strong>Tiebreaker</strong><span>Closest World Series game-count prediction wins tied scores.</span></div>
+          <div><strong>Privacy</strong><span>Other brackets stay hidden until the pool locks.</span></div>
+          <div><strong>Edits</strong><span>Use your name + edit PIN to reopen your bracket before lock.</span></div>
+        </div>
+      </div>
+
       <div class="identity-card">
         <label>
           Display name
@@ -83,6 +98,7 @@
         </label>
         <button id="submitBtn" class="primary">Submit bracket</button>
         <p id="submitMessage" class="form-message"></p>
+        <div id="submissionReceipt" class="receipt hidden"></div>
       </div>
     </section>
 
@@ -123,6 +139,10 @@
           <button id="lockNowBtn" class="secondary">Lock now</button>
           <button id="autoLockBtn" class="secondary">Use deadline</button>
         </div>
+        <label class="admin-note-label">Commissioner's note
+          <input id="commissionerNoteInput" maxlength="160" placeholder="e.g. Picks due before first pitch Tuesday">
+        </label>
+        <button id="saveNoteBtn" class="secondary">Save note</button>
       </div>
       <div class="panel">
         <div class="panel-heading"><h3>Record official series winners</h3><span>Only completed series need a result</span></div>
