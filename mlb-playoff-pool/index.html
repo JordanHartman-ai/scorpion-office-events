@@ -31,17 +31,20 @@
     <nav class="tabs" aria-label="Pool views">
       <button class="tab active" data-view="picks">My bracket</button>
       <button class="tab" data-view="dashboard">Pool dashboard</button>
-      <button class="tab" data-view="admin">Commissioner</button>
+      <button id="adminToggleBtn" class="tab admin-link" type="button">Commissioner tools</button>
     </nav>
 
     <section id="picksView" class="view active">
       <div class="hero-card">
-        <div>
+        <div class="hero-copy">
           <p class="eyebrow">MAKE YOUR PICKS</p>
           <h2>Eleven picks. One October winner.</h2>
-          <p class="subtle">Pick each series winner, then guess how many games the World Series lasts. Other brackets stay hidden until the pool locks.</p>
+          <p class="subtle">Pick each series winner. Then make three tiebreaker guesses for the World Series. Tiebreakers do not add points to your bracket score.</p>
         </div>
-        <div id="countdown" class="countdown">Deadline loading…</div>
+        <div class="hero-side">
+          <img id="heroScorpy" class="hero-scorpy" alt="Scorpy dressed for baseball">
+          <div id="countdown" class="countdown">Deadline loading…</div>
+        </div>
       </div>
 
       <div id="commissionerNote" class="notice note hidden"></div>
@@ -82,8 +85,13 @@
       <div id="bracket" class="bracket" aria-live="polite"></div>
 
       <div class="submit-card">
+        <div class="tiebreaker-intro">
+          <p class="eyebrow">TIEBREAKERS ONLY</p>
+          <h3>World Series guesses</h3>
+          <p>These do not add points. They are only used, in order, if bracket scores are tied.</p>
+        </div>
         <label>
-          World Series length
+          How many games will the World Series go?
           <select id="wsGames">
             <option value="">Choose 4–7 games</option>
             <option value="4">4 games</option>
@@ -91,6 +99,16 @@
             <option value="6">6 games</option>
             <option value="7">7 games</option>
           </select>
+        </label>
+        <label>
+          Total runs in the World Series
+          <input id="wsRuns" type="number" inputmode="numeric" min="1" max="150" placeholder="e.g. 42">
+          <small>Best guess is fine — this is only a tiebreaker.</small>
+        </label>
+        <label>
+          Total home runs in the World Series
+          <input id="wsHRs" type="number" inputmode="numeric" min="0" max="80" placeholder="e.g. 12">
+          <small>Best guess is fine — this is only a tiebreaker.</small>
         </label>
         <label id="overrideWrap" class="hidden">
           Commissioner password
@@ -132,7 +150,7 @@
     <section id="adminView" class="view">
       <div class="admin-card">
         <p class="eyebrow">COMMISSIONER</p>
-        <h2>Results & lock controls</h2>
+        <h2>Pool controls</h2>
         <p class="subtle">The password is checked only by Apps Script and is never stored in this site.</p>
         <label>Commissioner password <input id="adminPassword" type="password" autocomplete="current-password"></label>
         <div class="admin-actions">
@@ -144,12 +162,23 @@
         </label>
         <button id="saveNoteBtn" class="secondary">Save note</button>
       </div>
-      <div class="panel">
-        <div class="panel-heading"><h3>Record official series winners</h3><span>Only completed series need a result</span></div>
-        <div id="resultsEditor"></div>
-        <button id="saveResultsBtn" class="primary">Save results</button>
-        <p id="adminMessage" class="form-message"></p>
+      <div class="panel api-panel">
+        <div class="panel-heading"><h3>MLB data</h3><span>Automatic scoring source</span></div>
+        <div class="api-health">
+          <div><strong>MLB schedule</strong><span id="mlbScheduleHealth">Not tested</span></div>
+          <div><strong>MLB results</strong><span id="mlbResultsHealth">Not synced</span></div>
+          <div><strong>Google Sheet</strong><span id="sheetHealth">Connected</span></div>
+        </div>
+        <button id="syncResultsBtn" class="primary">Sync MLB results now</button>
+        <p class="subtle compact">Series winners and World Series tiebreaker totals update automatically from MLB data. Manual result entry is kept below only as a fallback.</p>
       </div>
+      <details class="panel manual-fallback">
+        <summary>Manual results fallback</summary>
+        <div class="panel-heading"><h3>Record official series winners</h3><span>Use only if MLB data is delayed</span></div>
+        <div id="resultsEditor"></div>
+        <button id="saveResultsBtn" class="secondary">Save manual results</button>
+      </details>
+      <p id="adminMessage" class="form-message"></p>
     </section>
   </main>
 
@@ -159,6 +188,7 @@
   </footer>
 
   <script src="./config.js"></script>
+  <script src="./scorpy-assets.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
