@@ -73,8 +73,12 @@
   function autoPick(mode) {
     state.picks={};
     const choose = teams => mode==="chalk" ? teams.slice().sort((a,b)=>a.seed-b.seed)[0] : teams[Math.floor(Math.random()*teams.length)];
-    for (const r of rounds()) for (const [field,teams] of r.games) {
-      const valid=teams.filter(Boolean); if(valid.length===2) state.picks[field]=choose(valid).abbr;
+    for (let roundIndex=0; roundIndex<4; roundIndex++) {
+      const current=rounds()[roundIndex];
+      for (const [field,teams] of current.games) {
+        const valid=teams.filter(Boolean);
+        if(valid.length===2) state.picks[field]=choose(valid).abbr;
+      }
     }
     renderBracket();
   }
@@ -230,7 +234,13 @@
   };
   $("#rulesBtn").onclick=()=>$("#rulesPanel").classList.toggle("hidden");
   $("#refreshDashboardBtn").onclick=refreshDashboard;
-  if(window.SCORPY_MLB_ASSETS?.length) $("#heroScorpy").src=window.SCORPY_MLB_ASSETS[0].src;
+  if(window.SCORPY_MLB_ASSETS?.length) {
+    const asset=window.SCORPY_MLB_ASSETS[0].src;
+    const hero=$("#heroScorpy");
+    const dash=$("#dashboardScorpy");
+    if(hero) hero.src=asset;
+    if(dash) dash.src=asset;
+  }
   renderBracket();
   renderResultsEditor();
   updateStatusUI();
