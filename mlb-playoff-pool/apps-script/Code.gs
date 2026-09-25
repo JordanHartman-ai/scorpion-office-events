@@ -183,6 +183,7 @@ function setResults_(body) {
     if (v) result[f]=v; else delete result[f];
   });
   if (incoming.wsGames && [4,5,6,7].includes(Number(incoming.wsGames))) result.wsGames=Number(incoming.wsGames);
+  else delete result.wsGames;
   result.updatedAt=new Date().toISOString();
   const row=headers.map(h=>result[h]??"");
   if (sh.getLastRow()<2) sh.appendRow(row); else sh.getRange(2,1,1,row.length).setValues([row]);
