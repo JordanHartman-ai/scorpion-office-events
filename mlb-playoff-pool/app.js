@@ -109,10 +109,28 @@
   }
 
   async function refreshStatus() {
-    if(!cfg.API_URL){$("#setupBanner").classList.remove("hidden");renderBracket();renderResultsEditor();return;}
+    renderBracket();
+    renderResultsEditor();
+    updateStatusUI();
+    if(!cfg.API_URL){
+      $("#setupBanner").classList.remove("hidden");
+      $("#setupBanner").textContent="Pool backend is not connected yet.";
+      return;
+    }
     try {
-      const r=await api("getStatus"); state.status=r.status; state.results=r.results||{}; updateStatusUI(); renderBracket(); renderResultsEditor();
-    } catch(e){$("#setupBanner").classList.remove("hidden");$("#setupBanner").textContent=e.message;}
+      const r=await api("getStatus");
+      state.status=r.status;
+      state.results=r.results||{};
+      $("#setupBanner").classList.add("hidden");
+      updateStatusUI();
+      renderBracket();
+      renderResultsEditor();
+    } catch(e){
+      $("#setupBanner").classList.remove("hidden");
+      $("#setupBanner").textContent="Can't reach the pool backend. If Apps Script is restricted to your Google domain, change the web app access to Anyone so this GitHub Pages site can connect.";
+      $("#lockLabel").textContent="Backend unavailable";
+      $("#countdown").textContent="Deadline unavailable";
+    }
   }
 
   function scorePick(p) {
@@ -202,5 +220,8 @@
     const results={};FIELDS.forEach(f=>{const v=$("#res-"+f).value;if(v)results[f]=v});results.wsGames=$("#res-wsGames").value||"";
     try{const r=await api("setResults",{adminPassword:$("#adminPassword").value,results});state.results=r.results;$("#adminMessage").textContent="Results saved.";$("#adminMessage").className="form-message success"}catch(e){$("#adminMessage").textContent=e.message;$("#adminMessage").className="form-message error"}
   };
+  renderBracket();
+  renderResultsEditor();
+  updateStatusUI();
   refreshStatus();
 })();
