@@ -1,4 +1,6 @@
 const PICK_FIELDS = ["alWC1","alWC2","nlWC1","nlWC2","alds1","alds2","nlds1","nlds2","alcs","nlcs","ws"];
+const AL_TEAMS = ["TB","CLE","TEX","NYY","BOS","CWS"];
+const NL_TEAMS = ["MIL","LAD","ATL","CHC","SD","PHI"];
 
 function doGet(e) {
   return json_({ok:true,message:"MLB playoff pool API",status:getStatus_()});
@@ -111,6 +113,11 @@ function validatePicks_(picks) {
     if (!/^[A-Z]{2,3}$/.test(v)) throw new Error("Missing or invalid pick: "+f);
     out[f]=v;
   });
+  const alFields=["alWC1","alWC2","alds1","alds2","alcs"];
+  const nlFields=["nlWC1","nlWC2","nlds1","nlds2","nlcs"];
+  alFields.forEach(f=>{ if (!AL_TEAMS.includes(out[f])) throw new Error("Invalid AL pick: "+f); });
+  nlFields.forEach(f=>{ if (!NL_TEAMS.includes(out[f])) throw new Error("Invalid NL pick: "+f); });
+  if (![...AL_TEAMS,...NL_TEAMS].includes(out.ws)) throw new Error("Invalid World Series pick");
   const g=Number((picks||{}).wsGames);
   if (![4,5,6,7].includes(g)) throw new Error("World Series tiebreaker must be 4–7");
   out.wsGames=g;
@@ -125,6 +132,9 @@ function submitPick_(body) {
   const picks=validatePicks_(body.picks);
   const sh=ss_().getSheetByName("Picks");
   if (!sh) throw new Error("Run setupPool() first");
+  const scriptLock=LockService.getScriptLock();
+  scriptLock.waitLock(5000);
+  try {
   const data=sh.getDataRange().getValues();
   const headers=data[0];
   const rows=data.slice(1);
@@ -142,6 +152,9 @@ function submitPick_(body) {
   if (idx>=0) sh.getRange(idx+2,1,1,row.length).setValues([row]);
   else sh.appendRow(row);
   return {ok:true,updated};
+  } finally {
+    scriptLock.releaseLock();
+  }
 }
 
 function getPicks_(body) {
