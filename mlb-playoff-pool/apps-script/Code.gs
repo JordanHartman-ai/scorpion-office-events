@@ -113,11 +113,20 @@ function validatePicks_(picks) {
     if (!/^[A-Z]{2,3}$/.test(v)) throw new Error("Missing or invalid pick: "+f);
     out[f]=v;
   });
-  const alFields=["alWC1","alWC2","alds1","alds2","alcs"];
-  const nlFields=["nlWC1","nlWC2","nlds1","nlds2","nlcs"];
-  alFields.forEach(f=>{ if (!AL_TEAMS.includes(out[f])) throw new Error("Invalid AL pick: "+f); });
-  nlFields.forEach(f=>{ if (!NL_TEAMS.includes(out[f])) throw new Error("Invalid NL pick: "+f); });
-  if (![...AL_TEAMS,...NL_TEAMS].includes(out.ws)) throw new Error("Invalid World Series pick");
+  const allowed = {
+    alWC1:["TEX","CWS"], alWC2:["NYY","BOS"],
+    nlWC1:["ATL","PHI"], nlWC2:["CHC","SD"]
+  };
+  Object.keys(allowed).forEach(f=>{
+    if (!allowed[f].includes(out[f])) throw new Error("Impossible bracket pick: "+f);
+  });
+  if (!["TB",out.alWC2].includes(out.alds1)) throw new Error("Impossible bracket pick: alds1");
+  if (!["CLE",out.alWC1].includes(out.alds2)) throw new Error("Impossible bracket pick: alds2");
+  if (!["MIL",out.nlWC2].includes(out.nlds1)) throw new Error("Impossible bracket pick: nlds1");
+  if (!["LAD",out.nlWC1].includes(out.nlds2)) throw new Error("Impossible bracket pick: nlds2");
+  if (![out.alds1,out.alds2].includes(out.alcs)) throw new Error("Impossible bracket pick: alcs");
+  if (![out.nlds1,out.nlds2].includes(out.nlcs)) throw new Error("Impossible bracket pick: nlcs");
+  if (![out.alcs,out.nlcs].includes(out.ws)) throw new Error("Impossible bracket pick: ws");
   const g=Number((picks||{}).wsGames);
   if (![4,5,6,7].includes(g)) throw new Error("World Series tiebreaker must be 4–7");
   out.wsGames=g;
