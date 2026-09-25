@@ -80,6 +80,7 @@
   }
 
   function renderResultsEditor() {
+    if (!$("#resultsEditor")) return;
     $("#resultsEditor").innerHTML = FIELDS.map(f=>`
       <div class="result-row"><label for="res-${f}">${LABELS[f]}</label>
       <select id="res-${f}"><option value="">Not decided</option>${Object.values(teamMap).map(t=>`<option value="${t.abbr}" ${state.results[f]===t.abbr?"selected":""}>${t.name}</option>`).join("")}</select></div>`).join("") + `
@@ -94,7 +95,7 @@
     const note=String(state.status.commissionerNote||"").trim();
     $("#commissionerNote").textContent=note;
     $("#commissionerNote").classList.toggle("hidden",!note);
-    $("#commissionerNoteInput").value=note;
+    if ($("#commissionerNoteInput")) $("#commissionerNoteInput").value=note;
     $("#lockDot").className="status-dot "+(locked?"locked":"live");
     $("#lockLabel").textContent=locked?"Picks locked":"Picks open";
     $("#submitBtn").textContent=locked?"Submit with commissioner override":"Submit bracket";
