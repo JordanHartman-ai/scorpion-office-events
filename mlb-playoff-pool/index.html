@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#08111f">
+  <title>Scorpion Office MLB Playoff Pool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">SCORPION OFFICE · 2026</p>
+      <h1>October Bracket</h1>
+    </div>
+    <div class="header-status">
+      <span id="lockDot" class="status-dot"></span>
+      <span id="lockLabel">Checking pool…</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="setupBanner" class="notice warning hidden">
+      <strong>One setup step remains.</strong>
+      Add the deployed Google Apps Script Web App URL to <code>config.js</code>.
+    </section>
+
+    <nav class="tabs" aria-label="Pool views">
+      <button class="tab active" data-view="picks">My bracket</button>
+      <button class="tab" data-view="dashboard">Pool dashboard</button>
+      <button class="tab" data-view="admin">Commissioner</button>
+    </nav>
+
+    <section id="picksView" class="view active">
+      <div class="hero-card">
+        <div>
+          <p class="eyebrow">MAKE YOUR PICKS</p>
+          <h2>Eleven picks. One October winner.</h2>
+          <p class="subtle">Pick each series winner, then guess how many games the World Series lasts. Other brackets stay hidden until the pool locks.</p>
+        </div>
+        <div id="countdown" class="countdown">Deadline loading…</div>
+      </div>
+
+      <div class="identity-card">
+        <label>
+          Display name
+          <input id="nameInput" autocomplete="name" maxlength="40" placeholder="e.g. Jordan">
+        </label>
+        <label>
+          Edit PIN
+          <input id="pinInput" type="password" inputmode="numeric" maxlength="12" placeholder="4–12 characters">
+          <small>Use this to reopen or change your bracket before lock.</small>
+        </label>
+        <button id="loadMineBtn" class="secondary">Load my saved bracket</button>
+      </div>
+
+      <div class="quick-picks">
+        <span>Need a shortcut?</span>
+        <button id="chalkBtn" class="chip">Chalk</button>
+        <button id="randomBtn" class="chip">Random</button>
+        <button id="clearBtn" class="chip ghost">Clear</button>
+      </div>
+
+      <div id="bracket" class="bracket" aria-live="polite"></div>
+
+      <div class="submit-card">
+        <label>
+          World Series length
+          <select id="wsGames">
+            <option value="">Choose 4–7 games</option>
+            <option value="4">4 games</option>
+            <option value="5">5 games</option>
+            <option value="6">6 games</option>
+            <option value="7">7 games</option>
+          </select>
+        </label>
+        <label id="overrideWrap" class="hidden">
+          Commissioner password
+          <input id="overridePassword" type="password" autocomplete="current-password" placeholder="Required after lock">
+        </label>
+        <button id="submitBtn" class="primary">Submit bracket</button>
+        <p id="submitMessage" class="form-message"></p>
+      </div>
+    </section>
+
+    <section id="dashboardView" class="view">
+      <div class="dashboard-top">
+        <div>
+          <p class="eyebrow">LIVE POOL</p>
+          <h2>Scoreboard</h2>
+        </div>
+        <button id="refreshDashboardBtn" class="secondary">Refresh</button>
+      </div>
+      <div id="dashboardLocked" class="notice">Everyone else's picks will appear here once the pool locks.</div>
+      <div id="dashboardContent" class="hidden">
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-heading"><h3>Leaderboard</h3><span>1 point per correct series pick</span></div>
+            <div id="leaderboard"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-heading"><h3>On deck</h3><span>MLB schedule + probable starters</span></div>
+            <div id="games"></div>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-heading"><h3>Pool pulse</h3><span>Pick popularity after lock</span></div>
+          <div id="popularity" class="popularity-grid"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="adminView" class="view">
+      <div class="admin-card">
+        <p class="eyebrow">COMMISSIONER</p>
+        <h2>Results & lock controls</h2>
+        <p class="subtle">The password is checked only by Apps Script and is never stored in this site.</p>
+        <label>Commissioner password <input id="adminPassword" type="password" autocomplete="current-password"></label>
+        <div class="admin-actions">
+          <button id="lockNowBtn" class="secondary">Lock now</button>
+          <button id="unlockBtn" class="secondary">Temporarily unlock</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-heading"><h3>Record official series winners</h3><span>Only completed series need a result</span></div>
+        <div id="resultsEditor"></div>
+        <button id="saveResultsBtn" class="primary">Save results</button>
+        <p id="adminMessage" class="form-message"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>For office bragging rights.</span>
+    <span>Teams are provisional until MLB seeding is final.</span>
+  </footer>
+
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
