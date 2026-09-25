@@ -59,7 +59,7 @@
       ${r.games.map(([field,teams])=>`
         <div class="matchup ${state.picks[field] ? "matchup-picked" : ""}">
           <div class="matchup-label">${LABELS[field]}</div>
-          ${teams.map(t => t ? `<button class="team-btn ${state.picks[field]===t.abbr?"selected":""}" data-field="${field}" data-team="${t.abbr}">
+          ${teams.map(t => t ? `<button class="team-btn ${state.picks[field]===t.abbr?"selected":""}" data-field="${field}" data-team="${t.abbr}" ${state.status.locked?"disabled":""}>
             <span class="seed">${t.seed}</span><span>${esc(t.name)}</span>
           </button>` : `<button class="team-btn disabled" disabled><span class="seed">—</span><span>Make earlier pick</span></button>`).join("")}
         </div>`).join("")}</div></div>`).join("");
@@ -102,8 +102,9 @@
     if ($("#commissionerNoteInput")) $("#commissionerNoteInput").value=note;
     $("#lockDot").className="status-dot "+(locked?"locked":"live");
     $("#lockLabel").textContent=locked?"Picks locked":"Picks open";
-    $("#submitBtn").textContent=locked?"Submit with commissioner override":"Submit bracket";
-    $("#overrideWrap").classList.toggle("hidden",!locked);
+    $("#submitBtn").textContent=locked?"Picks are locked":"Submit bracket";
+    $("#submitBtn").disabled=locked;
+    $("#overrideWrap").classList.add("hidden");
     if(state.status.lockAt){
       const target=new Date(state.status.lockAt);
       const update=()=>{
