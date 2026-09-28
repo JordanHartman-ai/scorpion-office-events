@@ -223,13 +223,23 @@
     try{
       const r=await api("getPicks",{name:state.identity.name,pin:state.identity.pin});
       state.picks=r.pick||{};
+      const currentTeams=new Set(Object.keys(teamMap));
+      const legacyFields=FIELDS.filter(f=>state.picks[f] && !currentTeams.has(state.picks[f]));
+      if(legacyFields.length){
+        legacyFields.forEach(f=>delete state.picks[f]);
+        ["alds1","alds2","nlds1","nlds2","alcs","nlcs","ws"].forEach(f=>delete state.picks[f]);
+      }
       $("#nameInput").value=state.identity.name;
       $("#pinInput").value=state.identity.pin;
       $("#wsGames").value=r.pick?.wsGames||"";
       $("#wsRuns").value=r.pick?.wsRuns||"";
       $("#wsHRs").value=r.pick?.wsHRs||"";
       renderBracket();
-      $("#submitMessage").textContent=r.pick?"Your existing bracket is ready to edit.":"No existing bracket found for that name + PIN.";
+      $("#submitMessage").textContent=r.pick
+        ? (legacyFields.length
+            ? "Your saved bracket used the earlier provisional field. Please reselect the affected matchup(s) and later rounds, then resubmit."
+            : "Your existing bracket is ready to edit.")
+        : "No existing bracket found for that name + PIN.";
       $("#submitMessage").className="form-message";
     }catch(e){
       $("#submitMessage").textContent=e.message;
