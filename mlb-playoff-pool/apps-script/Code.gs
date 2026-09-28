@@ -1,11 +1,11 @@
 const PICK_FIELDS = ["alWC1","alWC2","nlWC1","nlWC2","alds1","alds2","nlds1","nlds2","alcs","nlcs","ws"];
-const AL_TEAMS = ["TB","CLE","TEX","NYY","BOS","CWS"];
+const AL_TEAMS = ["TB","CLE","HOU","NYY","BOS","CWS"];
 const NL_TEAMS = ["MIL","LAD","ATL","CHC","SD","PHI"];
 const TEAM_ABBR_BY_ID = {
-  139:"TB",114:"CLE",140:"TEX",147:"NYY",111:"BOS",145:"CWS",
+  139:"TB",114:"CLE",117:"HOU",147:"NYY",111:"BOS",145:"CWS",
   158:"MIL",119:"LAD",144:"ATL",112:"CHC",135:"SD",143:"PHI"
 };
-const AL_TEAM_IDS = [139,114,140,147,111,145];
+const AL_TEAM_IDS = [139,114,117,147,111,145];
 const NL_TEAM_IDS = [158,119,144,112,135,143];
 
 function doGet(e) {
@@ -134,7 +134,7 @@ function validatePicks_(picks) {
     out[f]=v;
   });
   const allowed = {
-    alWC1:["TEX","CWS"], alWC2:["NYY","BOS"],
+    alWC1:["HOU","CWS"], alWC2:["NYY","BOS"],
     nlWC1:["ATL","PHI"], nlWC2:["CHC","SD"]
   };
   Object.keys(allowed).forEach(f=>{
@@ -294,7 +294,7 @@ function syncMlbResults_(body) {
     if(!winner) return;
     const teams=s.teamIds;
     if(s.gameType==="F"){
-      if(teams.includes(140)||teams.includes(145)) result.alWC1=winner;
+      if(teams.includes(117)||teams.includes(145)) result.alWC1=winner;
       else if(teams.includes(147)||teams.includes(111)) result.alWC2=winner;
       else if(teams.includes(144)||teams.includes(143)) result.nlWC1=winner;
       else if(teams.includes(112)||teams.includes(135)) result.nlWC2=winner;
