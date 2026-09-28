@@ -1,5 +1,5 @@
 window.POOL_CONFIG = {
-  API_URL: "https://script.google.com/a/macros/scorpion.co/s/AKfycbwQnp9bYuPhf4037Sm2L2PE7B8ocxvKS9JlSfs9R9vrQPhDGqWYQ49Qp297VH7k89yA/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbwiAFSKwP3EplePOjOQByxYUFYMRy_6bWUDFrdolSmg1U_l4kF0eZ-E3QMl2JQbuuxH/exec",
   POOL_NAME: "Scorpion Office MLB Playoff Pool",
   SEASON: 2026,
   TIME_ZONE: "America/Los_Angeles",
