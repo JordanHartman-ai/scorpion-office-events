@@ -167,7 +167,9 @@
       const maxPossible=p.score+(11-decided);
       const leaderScore=rows[0]?.score||0;
       const eliminated=maxPossible<leaderScore;
-      return `<div class="leader-row"><span class="rank">${i+1}</span><span><strong>${esc(p.name)}</strong><small>${eliminated?"Eliminated":`Max ${maxPossible}`}</small></span><span class="score">${p.score}/11</span></div>`;
+      const podium=i<3 ? ` podium podium-${i+1}` : "";
+      const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+      return `<div class="leader-row${podium}"><span class="rank">${medal||i+1}</span><span><strong>${esc(p.name)}</strong><small>${eliminated?"Eliminated":`Max ${maxPossible}`}</small></span><span class="score">${p.score}/11</span></div>`;
     }).join("") || "<p class='subtle'>No entries yet.</p>";
     renderLiveBracket(rows);
   }
@@ -188,11 +190,20 @@
     return `<div class="dash-series ${result?"decided":""}">
       <div class="dash-series-title">${esc(title)}</div>
       <div class="dash-series-teams">
-        ${visible.map(x=>`<div class="dash-team ${result===x.abbr?"winner":""}">
-          <span class="dash-seed">${x.team?.seed??"—"}</span>
-          <span class="dash-team-name">${esc(x.team?.name||x.abbr)}</span>
-          <span class="dash-pct">${x.pct}%</span>
-        </div>`).join("")}
+        ${visible.map(x=>{
+          const decided=!!result;
+          const won=result===x.abbr;
+          const lost=decided && !won;
+          const logo=x.team?.id ? `https://www.mlbstatic.com/team-logos/${x.team.id}.svg` : "";
+          return `<div class="dash-team ${won?"winner":""} ${lost?"eliminated":""}" style="--pick-pct:${x.pct}%">
+            <span class="dash-pct-fill" aria-hidden="true"></span>
+            <span class="dash-seed">${x.team?.seed??"—"}</span>
+            ${logo?`<img class="dash-team-logo" src="${logo}" alt="" loading="lazy">`:""}
+            <span class="dash-team-name">${esc(x.team?.name||x.abbr)}</span>
+            <span class="dash-pct">${x.pct}%</span>
+            ${won?'<span class="dash-advanced">✓ ADVANCED</span>':""}
+          </div>`;
+        }).join("")}
         ${hiddenPct? `<div class="dash-others">Others · ${hiddenPct}%</div>` : ""}
       </div>
     </div>`;
@@ -204,8 +215,8 @@
     const A=cfg.TEAMS.AL.map(t=>t.abbr), N=cfg.TEAMS.NL.map(t=>t.abbr);
     node.innerHTML=`
       <div class="bracket-legend">
-        <span><b>Pool %</b> = share of submitted brackets picking that team to win that series</span>
-        <span class="odds-note">Sportsbook odds are not connected yet</span>
+        <span><b>Pool %</b> = share of Scorpion brackets picking that team to win that series</span>
+        <span>Actual winners highlight as series finish</span>
       </div>
       <div class="live-bracket-grid">
         <div class="dash-round wc al">
@@ -247,13 +258,27 @@
     const fmt=d=>d.toISOString().slice(0,10);
     try{
       const r=await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&hydrate=probablePitcher,team&startDate=${fmt(start)}&endDate=${fmt(end)}`).then(x=>x.json());
-      const games=(r.dates||[]).flatMap(d=>d.games||[]).slice(0,10);
+      const rawGames=(r.dates||[]).flatMap(d=>d.games||[]);
+      const rankState=g=>{
+        const s=String(g.status?.abstractGameState||"");
+        const detailed=String(g.status?.detailedState||"");
+        if(s==="Live" || /in progress|delay/i.test(detailed)) return 0;
+        if(s==="Preview") return 1;
+        return 2;
+      };
+      const games=rawGames.sort((a,b)=>rankState(a)-rankState(b) || new Date(a.gameDate)-new Date(b.gameDate)).slice(0,10);
       $("#games").innerHTML=games.map(g=>{
         const a=g.teams.away.team.name,h=g.teams.home.team.name;
         const ap=g.teams.away.probablePitcher?.fullName||"TBD", hp=g.teams.home.probablePitcher?.fullName||"TBD";
         const awayScore=g.teams.away.score, homeScore=g.teams.home.score;
-        const score=(awayScore!==undefined && homeScore!==undefined) ? ` · ${awayScore}-${homeScore}` : "";
-        return `<div class="game"><div class="game-top"><span>${esc(a)} @ ${esc(h)}</span><span>${new Date(g.gameDate).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div><div class="game-meta">${esc(ap)} vs ${esc(hp)} · ${esc(g.status.detailedState)}${score}</div></div>`;
+        const hasScore=awayScore!==undefined && homeScore!==undefined;
+        const isLive=rankState(g)===0;
+        const score=hasScore ? `<span class="game-score">${awayScore}–${homeScore}</span>` : "";
+        return `<div class="game ${isLive?"game-live":""}">
+          <div class="game-top"><span>${esc(a)} @ ${esc(h)}</span><span>${new Date(g.gameDate).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div>
+          <div class="game-status-row">${score}<span class="game-status">${esc(g.status?.detailedState||"Scheduled")}</span></div>
+          <div class="game-meta">${esc(ap)} vs ${esc(hp)}</div>
+        </div>`;
       }).join("")||"<p class='subtle'>No games found in the next five days.</p>";
     }catch{$("#games").innerHTML="<p class='subtle'>MLB schedule is temporarily unavailable.</p>"}
   }
@@ -270,6 +295,8 @@
       state.results=r.results||state.results;
       renderDashboard();
       loadGames();
+      const updated=$("#dashboardUpdatedAt");
+      if(updated) updated.textContent="Updated "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
     }catch(e){
       $("#dashboardLocked").textContent=e.message;
       $("#dashboardLocked").classList.remove("hidden");
