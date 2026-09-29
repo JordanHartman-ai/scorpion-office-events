@@ -127,3 +127,62 @@ body{background:linear-gradient(180deg,#07111d 0,#0b1724 48%,#07111d 100%)}
   .leaderboard-scroll,.games-scroll{max-height:420px}
   .live-bracket-grid{min-width:1450px}
 }
+
+
+/* Dashboard polish v5 */
+.dashboard-refresh-meta{display:flex;align-items:center;gap:10px;color:#8298ad;font-size:11px}
+.bracket-panel{border-color:#365b78;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.bracket-heading{margin-bottom:10px}
+.bracket-heading h3{font-size:32px}
+.bracket-legend{padding:10px 12px;background:#0b1b2a;border:1px solid #203d56;border-radius:10px}
+.bracket-legend span:last-child{color:#75a9d4}
+.dash-round-label{font-size:14px;letter-spacing:.15em}
+.dash-series{box-shadow:0 8px 20px rgba(0,0,0,.12)}
+.dash-team{
+  position:relative;
+  isolation:isolate;
+  grid-template-columns:24px 26px minmax(138px,1fr) auto;
+  overflow:hidden;
+}
+.dash-pct-fill{
+  position:absolute;inset:0 auto 0 0;width:var(--pick-pct,0%);
+  background:linear-gradient(90deg,rgba(54,139,210,.20),rgba(54,139,210,.06));
+  z-index:-1;border-right:1px solid rgba(101,184,255,.12)
+}
+.dash-team-logo{width:24px;height:24px;object-fit:contain}
+.dash-team.winner{border-color:#70c4ff;background:#143a59}
+.dash-team.winner .dash-pct-fill{background:linear-gradient(90deg,rgba(64,177,120,.28),rgba(64,177,120,.07))}
+.dash-team.eliminated{opacity:.48;filter:saturate(.5)}
+.dash-advanced{
+  grid-column:3/-1;
+  color:#74e0a1;
+  font:800 9px/1 "Barlow Condensed",sans-serif;
+  letter-spacing:.09em;
+  margin-top:1px
+}
+.dash-team-name{font-size:11.5px}
+.dash-pct{font-size:12px}
+.dash-series::after{
+  content:"";position:absolute;right:-15px;top:50%;width:15px;border-top:1px solid rgba(112,164,205,.28)
+}
+.dash-round.ws .dash-series::after,.dash-round.nl .dash-series::after{display:none}
+.dash-round.nl .dash-series::before{
+  content:"";position:absolute;left:-15px;top:50%;width:15px;border-top:1px solid rgba(112,164,205,.28)
+}
+.dash-round.ws{padding:0 2px}
+.dash-round.ws .dash-series{border-color:#477fac;background:linear-gradient(180deg,#102d47,#0c2237)}
+.leader-row.podium{border-radius:10px;padding-left:8px;padding-right:8px;margin-bottom:4px}
+.leader-row.podium-1{background:rgba(241,185,54,.10)}
+.leader-row.podium-2{background:rgba(176,190,205,.11)}
+.leader-row.podium-3{background:rgba(189,124,73,.10)}
+.leader-row.podium .rank{font-size:17px}
+.game-status-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.game-score{font:900 18px/1 "Barlow Condensed",sans-serif;color:#fff}
+.game-status{color:#8ea4b9;font-size:11px}
+.game-live{background:#0d2a3b;border-radius:10px;padding:12px;margin:4px 0;border:1px solid #285d7a}
+.game-live .game-status{color:#68d69b;font-weight:700}
+.on-deck-panel .panel-heading span{white-space:nowrap}
+@media(max-width:900px){
+  .dashboard-refresh-meta{align-items:flex-end;flex-direction:column}
+  .dash-team{grid-template-columns:24px 24px minmax(130px,1fr) auto}
+}
