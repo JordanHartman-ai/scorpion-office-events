@@ -251,7 +251,9 @@
       $("#games").innerHTML=games.map(g=>{
         const a=g.teams.away.team.name,h=g.teams.home.team.name;
         const ap=g.teams.away.probablePitcher?.fullName||"TBD", hp=g.teams.home.probablePitcher?.fullName||"TBD";
-        return `<div class="game"><div class="game-top"><span>${esc(a)} @ ${esc(h)}</span><span>${new Date(g.gameDate).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div><div class="game-meta">${esc(ap)} vs ${esc(hp)} · ${esc(g.status.detailedState)}</div></div>`;
+        const awayScore=g.teams.away.score, homeScore=g.teams.home.score;
+        const score=(awayScore!==undefined && homeScore!==undefined) ? ` · ${awayScore}-${homeScore}` : "";
+        return `<div class="game"><div class="game-top"><span>${esc(a)} @ ${esc(h)}</span><span>${new Date(g.gameDate).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div><div class="game-meta">${esc(ap)} vs ${esc(hp)} · ${esc(g.status.detailedState)}${score}</div></div>`;
       }).join("")||"<p class='subtle'>No games found in the next five days.</p>";
     }catch{$("#games").innerHTML="<p class='subtle'>MLB schedule is temporarily unavailable.</p>"}
   }
@@ -274,11 +276,22 @@
     }
   }
 
+  let dashboardTimer=null;
+  function startDashboardLiveRefresh(){
+    if(dashboardTimer) clearInterval(dashboardTimer);
+    dashboardTimer=setInterval(()=>{
+      if($("#dashboardView")?.classList.contains("active")) refreshDashboard();
+    },120000);
+  }
+
   document.querySelectorAll(".tab[data-view]").forEach(b=>b.addEventListener("click",()=>{
     document.querySelectorAll(".tab[data-view]").forEach(x=>x.classList.toggle("active",x===b));
     document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
     $("#"+b.dataset.view+"View").classList.add("active");
-    if(b.dataset.view==="dashboard")refreshDashboard();
+    if(b.dataset.view==="dashboard"){
+      refreshDashboard();
+      startDashboardLiveRefresh();
+    }
   }));
   $("#chalkBtn").onclick=()=>autoPick("chalk"); $("#randomBtn").onclick=()=>autoPick("random");
   $("#clearBtn").onclick=()=>{state.picks={};$("#wsGames").value="";$("#wsRuns").value="";$("#wsHRs").value="";renderBracket()};
