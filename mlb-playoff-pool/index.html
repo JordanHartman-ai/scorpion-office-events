@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260929-1">
+  <link rel="stylesheet" href="./styles.css?v=20260929-4">
 </head>
 <body>
   <header class="site-header">
@@ -134,20 +134,27 @@
       </div>
       <div id="dashboardLocked" class="notice">Everyone else's picks will appear here once the pool locks.</div>
       <div id="dashboardContent" class="hidden">
-        <div class="dashboard-grid">
-          <article class="panel">
-            <div class="panel-heading"><h3>Leaderboard</h3><span>1 point per correct series pick</span></div>
-            <div id="leaderboard"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-heading"><h3>On deck</h3><span>MLB schedule + probable starters</span></div>
-            <div id="games"></div>
-          </article>
-        </div>
         <article class="panel bracket-panel">
-          <div class="panel-heading"><h3>Live bracket</h3><span>Bracket path + pool pick percentages</span></div>
+          <div class="panel-heading bracket-heading">
+            <div>
+              <p class="eyebrow">POSTSEASON PICTURE</p>
+              <h3>Live bracket</h3>
+            </div>
+            <span>Bracket path + pool pick percentages</span>
+          </div>
           <div id="liveBracket"></div>
         </article>
+
+        <div class="dashboard-grid dashboard-grid-lower">
+          <article class="panel leaderboard-panel">
+            <div class="panel-heading"><h3>Leaderboard</h3><span>1 point per correct series pick</span></div>
+            <div id="leaderboard" class="leaderboard-scroll"></div>
+          </article>
+          <article class="panel on-deck-panel">
+            <div class="panel-heading"><h3>On deck</h3><span>MLB schedule + probable starters · live</span></div>
+            <div id="games" class="games-scroll"></div>
+          </article>
+        </div>
       </div>
     </section>
   </main>
@@ -158,6 +165,6 @@
   </footer>
 
   <script src="./config.js"></script>
-  <script src="./app.js?v=20260929-2"></script>
+  <script src="./app.js?v=20260929-4"></script>
 </body>
 </html>
