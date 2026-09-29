@@ -242,8 +242,6 @@
         </div>
       </div>`;
   }
-  }
-
   async function loadGames(){
     const start=new Date(); const end=new Date(Date.now()+5*86400000);
     const fmt=d=>d.toISOString().slice(0,10);
