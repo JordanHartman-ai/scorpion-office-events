@@ -169,11 +169,79 @@
       const eliminated=maxPossible<leaderScore;
       return `<div class="leader-row"><span class="rank">${i+1}</span><span><strong>${esc(p.name)}</strong><small>${eliminated?"Eliminated":`Max ${maxPossible}`}</small></span><span class="score">${p.score}/11</span></div>`;
     }).join("") || "<p class='subtle'>No entries yet.</p>";
-    $("#popularity").innerHTML=FIELDS.map(f=>{
-      const counts={}; rows.forEach(p=>{if(p[f])counts[p[f]]=(counts[p[f]]||0)+1});
-      const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]; if(!top)return "";
-      const pct=Math.round(top[1]/rows.length*100); return `<div class="pop-card"><strong>${LABELS[f]}</strong><div>${esc(teamMap[top[0]]?.name||top[0])} · ${pct}%</div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
-    }).join("");
+    renderLiveBracket(rows);
+  }
+
+  function pickPct(rows,field,abbr){
+    if(!rows.length) return 0;
+    return Math.round(rows.filter(p=>p[field]===abbr).length/rows.length*100);
+  }
+
+  function seriesCard(rows, field, title, candidates){
+    const result=state.results[field];
+    const ranked=(candidates||[])
+      .filter(Boolean)
+      .map(abbr=>({abbr,pct:pickPct(rows,field,abbr),team:teamMap[abbr]}))
+      .sort((a,b)=>b.pct-a.pct || ((a.team?.seed||99)-(b.team?.seed||99)));
+    const visible=ranked.slice(0,4);
+    const hiddenPct=ranked.slice(4).reduce((s,x)=>s+x.pct,0);
+    return `<div class="dash-series ${result?"decided":""}">
+      <div class="dash-series-title">${esc(title)}</div>
+      <div class="dash-series-teams">
+        ${visible.map(x=>`<div class="dash-team ${result===x.abbr?"winner":""}">
+          <span class="dash-seed">${x.team?.seed??"—"}</span>
+          <span class="dash-team-name">${esc(x.team?.name||x.abbr)}</span>
+          <span class="dash-pct">${x.pct}%</span>
+        </div>`).join("")}
+        ${hiddenPct? `<div class="dash-others">Others · ${hiddenPct}%</div>` : ""}
+      </div>
+    </div>`;
+  }
+
+  function renderLiveBracket(rows){
+    const node=$("#liveBracket");
+    if(!node) return;
+    const A=cfg.TEAMS.AL.map(t=>t.abbr), N=cfg.TEAMS.NL.map(t=>t.abbr);
+    node.innerHTML=`
+      <div class="bracket-legend">
+        <span><b>Pool %</b> = share of submitted brackets picking that team to win that series</span>
+        <span class="odds-note">Sportsbook odds are not connected yet</span>
+      </div>
+      <div class="live-bracket-grid">
+        <div class="dash-round wc al">
+          <div class="dash-round-label">AL Wild Card</div>
+          ${seriesCard(rows,"alWC1","3 vs 6",["HOU","CWS"])}
+          ${seriesCard(rows,"alWC2","4 vs 5",["NYY","BOS"])}
+        </div>
+        <div class="dash-round ds al">
+          <div class="dash-round-label">ALDS</div>
+          ${seriesCard(rows,"alds2","2 vs WC",["CLE","HOU","CWS"])}
+          ${seriesCard(rows,"alds1","1 vs WC",["TB","NYY","BOS"])}
+        </div>
+        <div class="dash-round cs al">
+          <div class="dash-round-label">ALCS</div>
+          ${seriesCard(rows,"alcs","American League Champion",A)}
+        </div>
+        <div class="dash-round ws">
+          <div class="dash-round-label">World Series</div>
+          ${seriesCard(rows,"ws","World Series Champion",A.concat(N))}
+        </div>
+        <div class="dash-round cs nl">
+          <div class="dash-round-label">NLCS</div>
+          ${seriesCard(rows,"nlcs","National League Champion",N)}
+        </div>
+        <div class="dash-round ds nl">
+          <div class="dash-round-label">NLDS</div>
+          ${seriesCard(rows,"nlds2","2 vs WC",["LAD","ATL","PHI"])}
+          ${seriesCard(rows,"nlds1","1 vs WC",["MIL","SD","CHC"])}
+        </div>
+        <div class="dash-round wc nl">
+          <div class="dash-round-label">NL Wild Card</div>
+          ${seriesCard(rows,"nlWC1","3 vs 6",["ATL","PHI"])}
+          ${seriesCard(rows,"nlWC2","4 vs 5",["SD","CHC"])}
+        </div>
+      </div>`;
+  }
   }
 
   async function loadGames(){
