@@ -261,13 +261,34 @@ function setCommissionerNote_(body) {
   return {ok:true,note};
 }
 
+function seriesFieldForGroup_(s) {
+  const teams=s.teamIds||[];
+  if(s.gameType==="F"){
+    if(teams.includes(117)||teams.includes(145)) return "alWC1";
+    if(teams.includes(147)||teams.includes(111)) return "alWC2";
+    if(teams.includes(144)||teams.includes(143)) return "nlWC1";
+    if(teams.includes(112)||teams.includes(135)) return "nlWC2";
+  } else if(s.gameType==="D"){
+    if(teams.includes(139)) return "alds1";
+    if(teams.includes(114)) return "alds2";
+    if(teams.includes(158)) return "nlds1";
+    if(teams.includes(119)) return "nlds2";
+  } else if(s.gameType==="L"){
+    if(teams.some(t=>AL_TEAM_IDS.includes(t))) return "alcs";
+    if(teams.some(t=>NL_TEAM_IDS.includes(t))) return "nlcs";
+  } else if(s.gameType==="W") return "ws";
+  return null;
+}
+
 function syncMlbResults_(body) {
   const props=PropertiesService.getScriptProperties();
   const hasAdmin=body && body.adminPassword;
   if (hasAdmin) requireAdmin_(body.adminPassword);
   const last=Number(props.getProperty("MLB_LAST_SYNC_MS")||0);
-  if (!hasAdmin && last && Date.now()-last < 15*60*1000) {
-    return {ok:true,results:getResults_(),syncedAt:new Date(last).toISOString(),cached:true};
+  if (!hasAdmin && last && Date.now()-last < 5*60*1000) {
+    let seriesProgress={};
+    try { seriesProgress=JSON.parse(props.getProperty("MLB_SERIES_PROGRESS_JSON")||"{}"); } catch(err) {}
+    return {ok:true,results:getResults_(),seriesProgress,syncedAt:new Date(last).toISOString(),cached:true};
   }
   const url="https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=2026&gameTypes=F,D,L,W&hydrate=linescore";
   const resp=UrlFetchApp.fetch(url,{muteHttpExceptions:true});
@@ -286,30 +307,34 @@ function syncMlbResults_(body) {
     groups[key].games.push(g);
   });
   const result=getResults_();
+  const seriesProgress={};
+  Object.keys(groups).forEach(key=>{
+    const s=groups[key];
+    const field=seriesFieldForGroup_(s);
+    if(field){
+      const wins={};
+      Object.keys(s.wins||{}).forEach(id=>{
+        const abbr=TEAM_ABBR_BY_ID[Number(id)];
+        if(abbr) wins[abbr]=Number(s.wins[id]||0);
+      });
+      seriesProgress[field]={
+        wins,
+        gamesCompleted:(s.games||[]).length,
+        winsNeeded:s.gameType==="F"?2:(s.gameType==="D"?3:4)
+      };
+    }
+  });
   Object.keys(groups).forEach(key=>{
     const s=groups[key], need=s.gameType==="F"?2:(s.gameType==="D"?3:4);
     const winnerId=Number(Object.keys(s.wins).find(t=>s.wins[t]>=need));
     if(!winnerId) return;
     const winner=TEAM_ABBR_BY_ID[winnerId];
     if(!winner) return;
-    const teams=s.teamIds;
-    if(s.gameType==="F"){
-      if(teams.includes(117)||teams.includes(145)) result.alWC1=winner;
-      else if(teams.includes(147)||teams.includes(111)) result.alWC2=winner;
-      else if(teams.includes(144)||teams.includes(143)) result.nlWC1=winner;
-      else if(teams.includes(112)||teams.includes(135)) result.nlWC2=winner;
-    } else if(s.gameType==="D"){
-      if(teams.includes(139)) result.alds1=winner;
-      else if(teams.includes(114)) result.alds2=winner;
-      else if(teams.includes(158)) result.nlds1=winner;
-      else if(teams.includes(119)) result.nlds2=winner;
-    } else if(s.gameType==="L"){
-      if(teams.some(t=>AL_TEAM_IDS.includes(t))) result.alcs=winner;
-      else if(teams.some(t=>NL_TEAM_IDS.includes(t))) result.nlcs=winner;
-    } else if(s.gameType==="W") result.ws=winner;
+    const field=seriesFieldForGroup_(s);
+    if(field) result[field]=winner;
   });
   const wsGames=completed.filter(g=>g.gameType==="W");
-  if(wsGames.length){
+  if(result.ws && wsGames.length){
     result.wsGames=wsGames.length;
     result.wsRuns=wsGames.reduce((sum,g)=>sum+Number(g.teams.away.score||0)+Number(g.teams.home.score||0),0);
     let hrs=0;
@@ -320,12 +345,17 @@ function syncMlbResults_(body) {
       }catch(err){}
     });
     result.wsHRs=hrs;
+  } else {
+    delete result.wsGames;
+    delete result.wsRuns;
+    delete result.wsHRs;
   }
   result.updatedAt=new Date().toISOString();
   props.setProperty("MLB_LAST_SYNC_MS",String(Date.now()));
+  props.setProperty("MLB_SERIES_PROGRESS_JSON",JSON.stringify(seriesProgress));
   const sh=ss_().getSheetByName("Results");
   const headers=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
   const row=headers.map(h=>result[h]??"");
   if(sh.getLastRow()<2) sh.appendRow(row); else sh.getRange(2,1,1,row.length).setValues([row]);
-  return {ok:true,results:result,syncedAt:result.updatedAt,completedGames:completed.length};
+  return {ok:true,results:result,seriesProgress,syncedAt:result.updatedAt,completedGames:completed.length};
 }
