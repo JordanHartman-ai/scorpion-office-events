@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=20260929-4">
+  <link rel="stylesheet" href="./styles.css?v=20260929-5">
 </head>
 <body>
   <header class="site-header">
@@ -129,7 +129,10 @@
           <div class="la-scorpy-badge" aria-label="Dodgers Scorpy">
             <img id="dashboardScorpy" class="dashboard-scorpy" src="./assets/scorpy-dodgers.svg?v=1" alt="Scorpy in a Dodgers baseball outfit">
           </div>
-          <button id="refreshDashboardBtn" class="secondary">Refresh</button>
+          <div class="dashboard-refresh-meta">
+            <span id="dashboardUpdatedAt">Updating…</span>
+            <button id="refreshDashboardBtn" class="secondary">Refresh</button>
+          </div>
         </div>
       </div>
       <div id="dashboardLocked" class="notice">Everyone else's picks will appear here once the pool locks.</div>
@@ -165,6 +168,6 @@
   </footer>
 
   <script src="./config.js"></script>
-  <script src="./app.js?v=20260929-4"></script>
+  <script src="./app.js?v=20260929-5"></script>
 </body>
 </html>
