@@ -68,3 +68,31 @@ body{background:linear-gradient(180deg,#07111d 0,#0b1724 48%,#07111d 100%)}
 .dashboard-scorpy{display:block;width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.2))}
 .dashboard-actions{gap:14px}
 @media(max-width:900px){.dashboard-scorpy{width:58px;height:58px}}
+
+
+/* Live dashboard bracket */
+.bracket-panel{overflow:hidden}
+.bracket-legend{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 14px;color:#91a7bd;font-size:12px}
+.bracket-legend b{color:#eaf4ff}.odds-note{color:#ffbf70}
+.live-bracket-grid{display:grid;grid-template-columns:1.2fr 1.12fr 1fr .95fr 1fr 1.12fr 1.2fr;gap:12px;min-width:1180px;align-items:stretch}
+#liveBracket{overflow-x:auto;padding-bottom:8px}
+.dash-round{display:flex;flex-direction:column;justify-content:space-around;gap:12px;min-width:0}
+.dash-round-label{text-align:center;color:#79baff;font:800 12px/1 "Barlow Condensed",sans-serif;letter-spacing:.13em;text-transform:uppercase;padding:2px 0 6px}
+.dash-series{position:relative;background:#0a1724;border:1px solid #2e4d68;border-radius:12px;padding:10px;min-width:0}
+.dash-series.decided{border-color:#4b80a7}
+.dash-series-title{color:#8ba1b7;font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.dash-series-teams{display:grid;gap:5px}
+.dash-team{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:7px;align-items:center;background:#0e2132;border:1px solid #1d3850;border-radius:8px;padding:7px 8px}
+.dash-team.winner{border-color:#70c4ff;background:#123451}
+.dash-seed{display:grid;place-items:center;width:21px;height:21px;border-radius:50%;background:#172e45;color:#9fc9ed;font-size:10px;font-weight:800}
+.dash-team-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;color:#eef6ff}
+.dash-pct{font-size:11px;font-weight:900;color:#72bbff}
+.dash-others{padding:4px 2px 1px;color:#6f8499;font-size:10px}
+.dash-round.ws{justify-content:center}
+.dash-round.cs{justify-content:center}
+.dash-round.ds .dash-series:first-of-type{margin-bottom:34px}
+.dash-round.wc .dash-series:first-of-type{margin-bottom:54px}
+@media(max-width:900px){
+  .live-bracket-grid{min-width:1080px}
+  .bracket-legend{display:grid}
+}
