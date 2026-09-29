@@ -241,3 +241,14 @@ body{background:linear-gradient(180deg,#07111d 0,#0b1724 48%,#07111d 100%)}
   #liveBracket{overflow-x:auto}
   .live-bracket-grid{min-width:1180px;width:1180px}
 }
+
+
+/* Series progress */
+.dash-series-progress{
+  margin:-2px 0 8px;
+  color:#8fc9ff;
+  font-size:10px;
+  font-weight:700;
+  line-height:1.2;
+}
+.dash-series.decided .dash-series-progress{color:#77dba0}
