@@ -96,3 +96,34 @@ body{background:linear-gradient(180deg,#07111d 0,#0b1724 48%,#07111d 100%)}
   .live-bracket-grid{min-width:1080px}
   .bracket-legend{display:grid}
 }
+
+
+/* Dashboard layout v4 */
+.bracket-panel{margin-bottom:16px;background:linear-gradient(180deg,#10263a 0%,#0d1d2d 100%)}
+.bracket-heading{align-items:flex-end}
+.bracket-heading .eyebrow{margin-bottom:4px}
+.bracket-heading h3{font-size:28px}
+.dashboard-grid-lower{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);align-items:start}
+.leaderboard-panel{background:#f4f8fc!important;color:#142233!important}
+.leaderboard-panel .panel-heading span{color:#61778b!important}
+.leaderboard-scroll,.games-scroll{max-height:560px;overflow-y:auto;padding-right:8px;scrollbar-gutter:stable}
+.leaderboard-scroll::-webkit-scrollbar,.games-scroll::-webkit-scrollbar,#liveBracket::-webkit-scrollbar{width:9px;height:9px}
+.leaderboard-scroll::-webkit-scrollbar-thumb,.games-scroll::-webkit-scrollbar-thumb,#liveBracket::-webkit-scrollbar-thumb{background:#35536f;border-radius:999px}
+.leaderboard-scroll::-webkit-scrollbar-track,.games-scroll::-webkit-scrollbar-track,#liveBracket::-webkit-scrollbar-track{background:transparent}
+
+/* Give full team names room; never ellipsize */
+.live-bracket-grid{grid-template-columns:1.35fr 1.32fr 1.22fr 1.18fr 1.22fr 1.32fr 1.35fr;gap:14px;min-width:1540px}
+.dash-series{padding:11px}
+.dash-team{grid-template-columns:24px minmax(118px,1fr) auto;gap:8px;padding:8px}
+.dash-team-name{overflow:visible;text-overflow:clip;white-space:normal;line-height:1.15;font-size:11px}
+.dash-pct{white-space:nowrap}
+.dash-round-label{font-size:13px}
+.dash-series-title{font-size:10px}
+#liveBracket{overflow-x:auto;padding-bottom:12px}
+.bracket-legend{margin-bottom:16px}
+
+@media(max-width:900px){
+  .dashboard-grid-lower{grid-template-columns:1fr}
+  .leaderboard-scroll,.games-scroll{max-height:420px}
+  .live-bracket-grid{min-width:1450px}
+}
