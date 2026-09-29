@@ -6,7 +6,7 @@
     alds1:"ALDS: 1 vs WC", alds2:"ALDS: 2 vs WC", nlds1:"NLDS: 1 vs WC", nlds2:"NLDS: 2 vs WC",
     alcs:"ALCS", nlcs:"NLCS", ws:"World Series"
   };
-  const state = { picks:{}, status:{locked:false,lockAt:null,entryCount:0,commissionerNote:""}, results:{}, allPicks:[], identity:{name:"",pin:""} };
+  const state = { picks:{}, status:{locked:false,lockAt:null,entryCount:0,commissionerNote:""}, results:{}, seriesProgress:{}, allPicks:[], identity:{name:"",pin:""} };
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   const teamMap = Object.fromEntries([...cfg.TEAMS.AL,...cfg.TEAMS.NL].map(t=>[t.abbr,t]));
@@ -179,6 +179,20 @@
     return Math.round(rows.filter(p=>p[field]===abbr).length/rows.length*100);
   }
 
+  function seriesProgressText(field){
+    const p=state.seriesProgress?.[field];
+    if(!p || !p.wins) return "";
+    const entries=Object.entries(p.wins).filter(([,wins])=>Number(wins)>0).sort((a,b)=>Number(b[1])-Number(a[1]));
+    if(!entries.length) return "";
+    if(entries.length===1){
+      const [abbr,wins]=entries[0];
+      return `${teamMap[abbr]?.name||abbr} leads ${wins}–0`;
+    }
+    const [a,b]=entries;
+    if(Number(a[1])===Number(b[1])) return `Series tied ${a[1]}–${b[1]}`;
+    return `${teamMap[a[0]]?.name||a[0]} leads ${a[1]}–${b[1]}`;
+  }
+
   function seriesCard(rows, field, title, candidates){
     const result=state.results[field];
     const ranked=(candidates||[])
@@ -187,8 +201,10 @@
       .sort((a,b)=>b.pct-a.pct || ((a.team?.seed||99)-(b.team?.seed||99)));
     const visible=ranked.slice(0,4);
     const hiddenPct=ranked.slice(4).reduce((s,x)=>s+x.pct,0);
+    const progressText=seriesProgressText(field);
     return `<div class="dash-series ${result?"decided":""}">
       <div class="dash-series-title">${esc(title)}</div>
+      ${progressText?`<div class="dash-series-progress">${esc(progressText)}</div>`:""}
       <div class="dash-series-teams">
         ${visible.map(x=>{
           const decided=!!result;
@@ -289,14 +305,15 @@
       try{
         const sync=await api("syncMlbResults",{});
         state.results=sync.results||state.results;
+        state.seriesProgress=sync.seriesProgress||state.seriesProgress;
+        const updated=$("#dashboardUpdatedAt");
+        if(updated && sync.syncedAt) updated.textContent="Updated "+new Date(sync.syncedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
       }catch(e){}
       const r=await api("getPicks",{name:""});
       state.allPicks=r.picks||[];
       state.results=r.results||state.results;
       renderDashboard();
       loadGames();
-      const updated=$("#dashboardUpdatedAt");
-      if(updated) updated.textContent="Updated "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
     }catch(e){
       $("#dashboardLocked").textContent=e.message;
       $("#dashboardLocked").classList.remove("hidden");
